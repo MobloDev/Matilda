@@ -380,6 +380,9 @@ If the prototype proves the operating model, the architecture may later evolve t
 - scalable relational or Dataverse persistence;
 - notifications and collaboration;
 - security and compliance controls; and
-- multi-Account portfolio views.
+- multi-Account portfolio views: a level above today's single-Account Overview where
+  authorised users see all defined Accounts, add or remove Accounts, and define per-Account
+  user access. The prototype deliberately has exactly one Account and no access control — this
+  is noted here as a known next step, not scheduled.
 
 Only introduce these after the prototype hypothesis is validated.

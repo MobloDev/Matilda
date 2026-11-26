@@ -588,6 +588,23 @@ Initiative 2 depends on an executive stakeholder with whom NOVA has no active re
 
 MATILDA must not silently change validated Account strategy.
 
+### V1 implementation scope
+
+The prototype's "MATILDA Changes" section on the Account Plan page implements the signal this
+chapter describes as any Insight flagged `affects_account_plan` (data-model.md "Insight"), and
+offers two of the five responses above:
+
+- **Accept update** → "Accept & Link": link the Insight to the Goal or Initiative it affects.
+  The link itself is the durable record of acceptance.
+- **Reject suggestion** → "Dismiss": acknowledge the Insight without linking it to anything.
+
+Rejecting the Insight outright reuses the existing action from the Customer Intelligence
+Insights page rather than a separate control here — the Insight is the same record either way.
+"Edit suggestion", "Request more evidence", and "Defer to Account Review" are not built yet;
+there is no richer change-type categorisation (goal-review-needed vs. new-strategic-signal vs.
+relationship-risk, per the examples above) either — every flagged Insight is presented the same
+way for now.
+
 ---
 
 # 12. Suggested page structure

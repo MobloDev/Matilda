@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Section } from "@/components/ui";
+import { dismissPlanImpact, linkInsightToPlan } from "./actions";
+import { rejectInsight } from "../customer-intelligence/actions";
 
 // Importance/priority enums are stored as plain strings in SQLite, so we
 // sort them in JavaScript after fetching (see src/app/page.tsx for the
@@ -41,6 +43,10 @@ export default async function AccountPlanPage() {
       risks: { include: { goal: true, initiative: true } },
       knowledgeGaps: {
         where: { status: { notIn: ["ANSWERED", "CLOSED_UNANSWERABLE"] } },
+      },
+      insights: {
+        where: { affectsAccountPlan: true },
+        include: { sourceLinks: { include: { source: true } } },
       },
     },
   });
@@ -401,13 +407,109 @@ export default async function AccountPlanPage() {
         </div>
       </Section>
 
-      {/* 8. MATILDA change layer — account-plan.md §11 */}
+      {/* 8. MATILDA change layer — account-plan.md §11.
+          V1 scope: Accept & Link, and Dismiss. Rejecting the Insight itself
+          reuses the same action already on the Customer Intelligence Insights
+          page, rather than duplicating it here. */}
       <Section title="MATILDA Changes">
-        <p className="text-sm text-zinc-500">
-          No AI adapter exists yet (see docs/architecture.md, "AI architecture").
-          Once one does, this section will show changes since the plan was last
-          reviewed, with evidence and a proposed update — never a silent change.
+        <p className="mb-2 text-sm text-zinc-500">
+          {account.insights.length} change(s) may affect this plan
+          {account.lastReviewedAt &&
+            ` since it was last reviewed on ${account.lastReviewedAt.toLocaleDateString()}`}
+          .
         </p>
+        <ul className="flex flex-col gap-3">
+          {account.insights.map((insight) => (
+            <li
+              key={insight.id}
+              className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+            >
+              <p className="font-medium">{insight.title}</p>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                {insight.statement}
+              </p>
+              {insight.soWhat && (
+                <p className="mt-2 text-xs text-zinc-500">
+                  Why this may affect the plan: {insight.soWhat}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-zinc-500">
+                Evidence:{" "}
+                {insight.sourceLinks.map((link) => link.source.title).join(", ") ||
+                  "none"}
+              </p>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-900">
+                <form action={linkInsightToPlan} className="flex items-center gap-2">
+                  <input type="hidden" name="insightId" value={insight.id} />
+                  <select
+                    name="target"
+                    required
+                    className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+                  >
+                    <option value="">Link to…</option>
+                    <optgroup label="Goals">
+                      {account.goals.map((goal) => (
+                        <option key={goal.id} value={`GOAL:${goal.id}`}>
+                          {goal.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Initiatives">
+                      {initiatives.map((initiative) => (
+                        <option key={initiative.id} value={`INITIATIVE:${initiative.id}`}>
+                          {initiative.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  <button
+                    type="submit"
+                    className="rounded border border-zinc-300 px-2.5 py-1 text-xs font-medium dark:border-zinc-700"
+                  >
+                    Accept &amp; Link
+                  </button>
+                </form>
+
+                <form action={dismissPlanImpact}>
+                  <input type="hidden" name="insightId" value={insight.id} />
+                  <button
+                    type="submit"
+                    className="rounded border border-zinc-300 px-2.5 py-1 text-xs font-medium dark:border-zinc-700"
+                  >
+                    Dismiss — no plan change needed
+                  </button>
+                </form>
+
+                <details className="text-xs">
+                  <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium text-red-700 dark:border-zinc-700 dark:text-red-400">
+                    Reject Insight
+                  </summary>
+                  <form action={rejectInsight} className="mt-2 flex flex-col gap-2">
+                    <input type="hidden" name="insightId" value={insight.id} />
+                    <textarea
+                      name="reason"
+                      placeholder="Why reject this Insight entirely? (required)"
+                      rows={2}
+                      className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                    />
+                    <button
+                      type="submit"
+                      className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                    >
+                      Confirm reject
+                    </button>
+                  </form>
+                </details>
+              </div>
+            </li>
+          ))}
+          {account.insights.length === 0 && (
+            <p className="text-sm text-zinc-500">
+              No changes are currently flagged as affecting this plan.
+            </p>
+          )}
+        </ul>
       </Section>
     </main>
   );
