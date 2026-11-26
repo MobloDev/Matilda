@@ -52,3 +52,7 @@ next-env.d.ts
 /.agents/
 /.claude/skills/
 /.windsurf/
+
+# Obsidian's own per-vault settings (theme, enabled plugins, open panes,
+# local cache) for the docs/ vault — personal workspace state, not content.
+/docs/.obsidian/
