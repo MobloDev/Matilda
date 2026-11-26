@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Badge, Section, Tabs } from "@/components/ui";
 import { CI_TABS, DOMAINS, DOMAIN_LABEL } from "@/lib/customer-intelligence";
+import { acceptInsight, editAndAcceptInsight, rejectInsight } from "../actions";
 
 const INFORMATION_TYPE_LABEL: Record<string, string> = {
   FACT: "Fact",
@@ -185,6 +186,64 @@ export default async function CustomerIntelligenceInsightsPage({
                   {insight.sourceLinks.map((link) => link.source.title).join(", ") ||
                     "none"}
                 </p>
+                {insight.status === "NEEDS_VALIDATION" && (
+                  <div className="mt-3 flex flex-col gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-900">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <form action={acceptInsight}>
+                        <input type="hidden" name="insightId" value={insight.id} />
+                        <button
+                          type="submit"
+                          className="rounded border border-zinc-300 px-2.5 py-1 text-xs font-medium dark:border-zinc-700"
+                        >
+                          Accept
+                        </button>
+                      </form>
+                      <details className="text-xs">
+                        <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                          Edit &amp; Accept
+                        </summary>
+                        <form
+                          action={editAndAcceptInsight}
+                          className="mt-2 flex flex-col gap-2"
+                        >
+                          <input type="hidden" name="insightId" value={insight.id} />
+                          <textarea
+                            name="statement"
+                            defaultValue={insight.statement}
+                            rows={2}
+                            className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                          />
+                          <button
+                            type="submit"
+                            className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                          >
+                            Save &amp; Accept
+                          </button>
+                        </form>
+                      </details>
+                      <details className="text-xs">
+                        <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium text-red-700 dark:border-zinc-700 dark:text-red-400">
+                          Reject
+                        </summary>
+                        <form action={rejectInsight} className="mt-2 flex flex-col gap-2">
+                          <input type="hidden" name="insightId" value={insight.id} />
+                          <textarea
+                            name="reason"
+                            placeholder="Why reject this suggestion? (required)"
+                            rows={2}
+                            className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                          />
+                          <button
+                            type="submit"
+                            className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                          >
+                            Confirm reject
+                          </button>
+                        </form>
+                      </details>
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

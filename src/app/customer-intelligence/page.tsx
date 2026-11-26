@@ -7,6 +7,7 @@ import {
   computeDomainStatus,
   countRecentChanges,
 } from "@/lib/customer-intelligence";
+import { runAgent } from "./actions";
 
 const STATUS_LABEL: Record<string, string> = {
   STRONG: "Strong",
@@ -15,7 +16,12 @@ const STATUS_LABEL: Record<string, string> = {
   STALE: "Stale",
 };
 
-export default async function CustomerIntelligenceOverviewPage() {
+export default async function CustomerIntelligenceOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const { ranAgent } = await searchParams;
   const account = await prisma.account.findFirst({
     include: {
       insights: {
@@ -81,6 +87,22 @@ export default async function CustomerIntelligenceOverviewPage() {
   return (
     <div className="flex flex-col gap-8">
       <Tabs tabs={CI_TABS} active="/customer-intelligence" />
+
+      <div className="flex items-center justify-between gap-3">
+        {ranAgent ? (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{ranAgent}</p>
+        ) : (
+          <span />
+        )}
+        <form action={runAgent}>
+          <button
+            type="submit"
+            className="rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+          >
+            Run agent
+          </button>
+        </form>
+      </div>
 
       <Section title="Intelligence Brief">
         {brief ? (
@@ -185,9 +207,15 @@ export default async function CustomerIntelligenceOverviewPage() {
 
       <Section title="Review Queue">
         <p className="mb-2 text-sm text-zinc-500">
-          {reviewQueue.length} suggestion(s) awaiting review. Accept/Edit/Reject
-          actions arrive in a later, interactive phase — see them on the Insights
-          page for now.
+          {reviewQueue.length} suggestion(s) awaiting review. Accept, Edit &amp;
+          Accept, or Reject them on the{" "}
+          <a
+            href="/customer-intelligence/insights"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Insights page
+          </a>
+          .
         </p>
         <ul className="flex flex-col gap-2">
           {reviewQueue.slice(0, 3).map((insight) => (
