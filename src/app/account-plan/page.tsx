@@ -39,7 +39,9 @@ export default async function AccountPlanPage() {
       growthAreas: { include: { initiative: true } },
       assumptions: { include: { goal: true, initiative: true } },
       risks: { include: { goal: true, initiative: true } },
-      knowledgeGaps: { where: { status: { not: "RESOLVED" } } },
+      knowledgeGaps: {
+        where: { status: { notIn: ["ANSWERED", "CLOSED_UNANSWERABLE"] } },
+      },
     },
   });
 

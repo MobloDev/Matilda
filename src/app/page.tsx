@@ -27,7 +27,9 @@ export default async function AccountOverviewPage() {
   const account = await prisma.account.findFirst({
     include: {
       insights: { orderBy: { observedAt: "desc" }, take: 5 },
-      knowledgeGaps: { where: { status: { not: "RESOLVED" } } },
+      knowledgeGaps: {
+        where: { status: { notIn: ["ANSWERED", "CLOSED_UNANSWERABLE"] } },
+      },
       goals: {
         include: {
           initiatives: {

@@ -124,11 +124,19 @@ Use `null` for unknown values. Do not convert unknown into false, zero, or “no
 
 ### `insight_status`
 
-- `new`
 - `needs_validation`
 - `validated`
+- `disputed`
 - `superseded`
-- `stale`
+- `rejected`
+
+Freshness (`fresh` / `ageing` / `stale`) is a **computed** value derived from `observed_at` /
+`validated_at`, not a stored status — see "Freshness" below. An earlier version of this
+document stored `stale` as a status value; that conflated two different concerns (is this
+knowledge still validated? vs. is it due for revalidation?) and a validated Insight could not
+be both current and overdue for review at the same time. `disputed` and `rejected` were added
+when `customer-intelligence.md` introduced agent-suggested Insights: a human must be able to
+reject a suggestion, or dispute a previously validated Insight, without the record disappearing.
 
 ### `confidence_level`
 
@@ -149,7 +157,14 @@ Confidence does not replace evidence or validation status.
 
 - `open`
 - `investigating`
-- `resolved`
+- `answered`
+- `closed_unanswerable`
+
+Renamed from `resolved` to `answered` (plus the new `closed_unanswerable`) when
+`customer-intelligence.md` made explicit that a Gap can close two different ways: a human
+found the answer (`answered`, linked to the Insight that answers it) or the team concluded it
+cannot be answered right now (`closed_unanswerable`). Both are a form of closure, but they call
+for different follow-up, so one combined `resolved` value was not precise enough.
 
 ### `relationship_strength`
 
@@ -269,6 +284,7 @@ Represents one discrete claim or piece of knowledge about an Account.
 | `observed_at` | datetime/date | Yes | When the information applied or was observed |
 | `validated_at` | datetime | No | Required when status becomes validated |
 | `validated_by` | user reference | No | Required with `validated_at` |
+| `rejected_reason` | text | No | Required when status is `rejected` |
 | `last_reviewed_at` | datetime | No | Last freshness review |
 | `review_due_at` | datetime | No | Optional freshness threshold |
 | `supersedes_insight_id` | UUID/FK | No | Previous Insight if this replaces it |
@@ -279,9 +295,10 @@ Represents one discrete claim or piece of knowledge about an Account.
 - Prefer one claim per Insight. Split compound statements.
 - `ai_inference` requires `ai_generated = true`.
 - `validated` requires `validated_at` and `validated_by`.
+- `rejected` requires a reason; `disputed` should record who disputed it and why.
 - Changing `information_type` to `fact` requires human validation and at least one Source or explicit user-origin rationale.
 - Superseded Insights remain queryable for history.
-- Staleness does not mean false; it means revalidation may be needed.
+- Staleness (computed, see "Freshness") does not mean false; it means revalidation may be needed, and does not change `status`.
 
 ## Source
 
@@ -324,11 +341,12 @@ Represents strategically important information the team does not know.
 | `question` | text | Yes | Formulated as an answerable question |
 | `topic` | string/enum | Yes | Knowledge domain |
 | `importance` | enum | Yes | Priority of resolving the gap |
-| `status` | enum | Yes | Open, investigating, resolved |
+| `status` | enum | Yes | Open, investigating, answered, closed unanswerable |
 | `owner` | user reference | No | Required once investigating |
 | `target_date` | date | No | Optional resolution target |
-| `resolution` | text | No | Required when resolved |
-| `resolved_at` | datetime | No | Required when resolved |
+| `resolution` | text | No | Required when answered or closed unanswerable |
+| `answered_by_insight_id` | UUID/FK | No | Required when status is `answered`; the Insight that answers it |
+| `resolved_at` | datetime | No | Required when answered or closed unanswerable |
 | `resolved_by` | user reference | No | Human validator |
 | common audit fields | — | Yes | As above |
 
@@ -338,9 +356,10 @@ A Knowledge Gap may link to one or more Insights, Relationships, Initiatives, or
 
 ### Rules
 
-- `resolved` requires `resolution`, `resolved_at`, and `resolved_by`.
-- Resolution should create or link to one or more Insights when it produces reusable Account knowledge.
-- Do not delete important resolved gaps; they provide learning history.
+- `answered` requires `resolution`, `resolved_at`, `resolved_by`, and `answered_by_insight_id`.
+- `closed_unanswerable` requires `resolution`, `resolved_at`, and `resolved_by`, but no `answered_by_insight_id`.
+- Answering should create or link to the Insight that produced the reusable Account knowledge.
+- Do not delete important closed Gaps; they provide learning history.
 
 ## Relationship
 
@@ -657,7 +676,7 @@ At minimum:
 4. AI-generated content is identifiable in storage and UI.
 5. Fact, Observation, Hypothesis, and AI Inference remain distinguishable.
 6. Human validation records validator and time.
-7. Resolved Knowledge Gaps link to reusable learning where applicable.
+7. Answered Knowledge Gaps link to the Insight that answers them.
 8. Completed Actions contain an outcome.
 9. Finalised Reviews contain a human finaliser and timestamp.
 10. Qualified Opportunities contain a human qualification decision.

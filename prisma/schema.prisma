@@ -21,12 +21,15 @@ enum InformationType {
   AI_INFERENCE
 }
 
+// Freshness (fresh/ageing/stale) is computed from observedAt/validatedAt, not stored
+// here — see docs/data-model.md "insight_status" for why STALE and NEW were dropped
+// and DISPUTED/REJECTED were added.
 enum InsightStatus {
-  NEW
   NEEDS_VALIDATION
   VALIDATED
+  DISPUTED
   SUPERSEDED
-  STALE
+  REJECTED
 }
 
 enum ConfidenceLevel {
@@ -45,7 +48,8 @@ enum ImportanceLevel {
 enum KnowledgeGapStatus {
   OPEN
   INVESTIGATING
-  RESOLVED
+  ANSWERED
+  CLOSED_UNANSWERABLE
 }
 
 enum RelationshipStrength {
@@ -151,50 +155,51 @@ enum SourceSupportType {
 // --- Core entities (docs/data-model.md sections 8-20) ---
 
 model Account {
-  id                     String   @id @default(uuid())
-  name                   String   @unique
-  accountType            String?
-  segment                String?
-  industry               String?
-  accountManager         String
+  id                      String    @id @default(uuid())
+  name                    String    @unique
+  accountType             String?
+  segment                 String?
+  industry                String?
+  accountManager          String
   technicalAccountManager String?
-  accountTeam            String? // comma-separated names for the prototype; a real contact list is out of scope
-  ambition               String?
-  strategicStatus        String?
-  lastReviewedAt         DateTime?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  accountTeam             String? // comma-separated names for the prototype; a real contact list is out of scope
+  ambition                String?
+  strategicStatus         String?
+  lastReviewedAt          DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  insights       Insight[]
-  sources        Source[]
-  knowledgeGaps  KnowledgeGap[]
-  relationships  Relationship[]
-  goals          Goal[]
-  initiatives    Initiative[]
-  actions        Action[]
-  opportunities  Opportunity[]
-  reviews        AccountReview[]
-  assumptions    Assumption[]
-  risks          Risk[]
-  growthAreas    GrowthArea[]
+  insights      Insight[]
+  sources       Source[]
+  knowledgeGaps KnowledgeGap[]
+  relationships Relationship[]
+  goals         Goal[]
+  initiatives   Initiative[]
+  actions       Action[]
+  opportunities Opportunity[]
+  reviews       AccountReview[]
+  assumptions   Assumption[]
+  risks         Risk[]
+  growthAreas   GrowthArea[]
 }
 
 model Insight {
-  id                 String           @id @default(uuid())
-  accountId          String
-  account            Account          @relation(fields: [accountId], references: [id])
-  title              String
-  statement          String
-  topic              String
-  informationType    InformationType
-  status             InsightStatus    @default(NEW)
-  importance         ImportanceLevel
-  confidence         ConfidenceLevel
-  observedAt         DateTime
-  validatedAt        DateTime?
-  validatedBy        String?
-  lastReviewedAt     DateTime?
-  reviewDueAt        DateTime?
+  id                  String          @id @default(uuid())
+  accountId           String
+  account             Account         @relation(fields: [accountId], references: [id])
+  title               String
+  statement           String
+  topic               String
+  informationType     InformationType
+  status              InsightStatus   @default(NEEDS_VALIDATION)
+  importance          ImportanceLevel
+  confidence          ConfidenceLevel
+  observedAt          DateTime
+  validatedAt         DateTime?
+  validatedBy         String?
+  rejectedReason      String?
+  lastReviewedAt      DateTime?
+  reviewDueAt         DateTime?
   supersedesInsightId String?
 
   originType  OriginType @default(HUMAN)
@@ -203,11 +208,12 @@ model Insight {
   createdBy   String
   updatedAt   DateTime   @updatedAt
 
-  sourceLinks      InsightSource[]
-  knowledgeGaps    KnowledgeGap[]
-  goalLinks        GoalInsight[]
-  initiativeLinks  InitiativeInsight[]
-  opportunityLinks OpportunityInsight[]
+  sourceLinks           InsightSource[]
+  relatedKnowledgeGaps  KnowledgeGap[]       @relation("GapRelatesTo")
+  answeredKnowledgeGaps KnowledgeGap[]       @relation("GapAnsweredBy")
+  goalLinks             GoalInsight[]
+  initiativeLinks       InitiativeInsight[]
+  opportunityLinks      OpportunityInsight[]
 }
 
 model Source {
@@ -239,67 +245,72 @@ model InsightSource {
 }
 
 model KnowledgeGap {
-  id           String             @id @default(uuid())
-  accountId    String
-  account      Account            @relation(fields: [accountId], references: [id])
-  question     String
-  topic        String
-  importance   ImportanceLevel
-  status       KnowledgeGapStatus @default(OPEN)
-  owner        String?
-  targetDate   DateTime?
-  resolution   String?
-  resolvedAt   DateTime?
-  resolvedBy   String?
+  id         String             @id @default(uuid())
+  accountId  String
+  account    Account            @relation(fields: [accountId], references: [id])
+  question   String
+  topic      String
+  importance ImportanceLevel
+  status     KnowledgeGapStatus @default(OPEN)
+  owner      String?
+  targetDate DateTime?
+  resolution String?
+  resolvedAt DateTime?
+  resolvedBy String?
 
   // Optional link to the Insight this gap is about, if any (data-model.md "Links").
   relatedInsightId String?
-  relatedInsight   Insight? @relation(fields: [relatedInsightId], references: [id])
+  relatedInsight   Insight? @relation("GapRelatesTo", fields: [relatedInsightId], references: [id])
+
+  // Required once status = ANSWERED (data-model.md "Rules"). A separate relation
+  // name from relatedInsight since both point from KnowledgeGap to Insight.
+  answeredByInsightId String?
+  answeredByInsight   Insight? @relation("GapAnsweredBy", fields: [answeredByInsightId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Relationship {
-  id                     String               @id @default(uuid())
-  accountId              String
-  account                Account              @relation(fields: [accountId], references: [id])
-  contactName            String
-  organisationOrUnit     String?
-  role                   String?
-  decisionRole           String?
-  strategicRelevance     ImportanceLevel
-  novaRelationshipOwner  String
-  strength               RelationshipStrength @default(UNKNOWN)
-  desiredPosition        String?
-  plannedApproach        String?
-  lastInteractionAt      DateTime?
-  notes                  String?
+  id                    String               @id @default(uuid())
+  accountId             String
+  account               Account              @relation(fields: [accountId], references: [id])
+  contactName           String
+  organisationOrUnit    String?
+  role                  String?
+  decisionRole          String?
+  strategicRelevance    ImportanceLevel
+  novaRelationshipOwner String
+  strength              RelationshipStrength @default(UNKNOWN)
+  desiredPosition       String?
+  plannedApproach       String?
+  lastInteractionAt     DateTime?
+  notes                 String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
   initiativeLinks InitiativeRelationship[]
 }
 
 model Goal {
-  id               String     @id @default(uuid())
-  accountId        String
-  account          Account    @relation(fields: [accountId], references: [id])
-  title            String
-  description      String?
-  rationale        String
-  owner            String
-  priority         ImportanceLevel
-  horizon          String?
-  successCriteria  String
-  baseline         String?
-  target           String?
-  status           GoalStatus @default(PROPOSED)
+  id                 String          @id @default(uuid())
+  accountId          String
+  account            Account         @relation(fields: [accountId], references: [id])
+  title              String
+  description        String?
+  rationale          String
+  owner              String
+  priority           ImportanceLevel
+  horizon            String?
+  successCriteria    String
+  baseline           String?
+  target             String?
+  status             GoalStatus      @default(PROPOSED)
   progressAssessment String?
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  initiatives Initiative[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  initiatives  Initiative[]
   insightLinks GoalInsight[]
   assumptions  Assumption[]
   risks        Risk[]
@@ -316,30 +327,30 @@ model GoalInsight {
 }
 
 model Initiative {
-  id          String           @id @default(uuid())
-  accountId   String
-  account     Account          @relation(fields: [accountId], references: [id])
-  goalId      String
-  goal        Goal             @relation(fields: [goalId], references: [id])
-  title       String
-  description String
-  rationale   String
-  owner       String
-  priority    ImportanceLevel
-  status      InitiativeStatus @default(PROPOSED)
-  startDate   DateTime?
-  targetDate  DateTime?
+  id            String           @id @default(uuid())
+  accountId     String
+  account       Account          @relation(fields: [accountId], references: [id])
+  goalId        String
+  goal          Goal             @relation(fields: [goalId], references: [id])
+  title         String
+  description   String
+  rationale     String
+  owner         String
+  priority      ImportanceLevel
+  status        InitiativeStatus @default(PROPOSED)
+  startDate     DateTime?
+  targetDate    DateTime?
   nextMilestone String?
 
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  actions       Action[]
-  opportunities Opportunity[]
-  insightLinks  InitiativeInsight[]
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  actions           Action[]
+  opportunities     Opportunity[]
+  insightLinks      InitiativeInsight[]
   relationshipLinks InitiativeRelationship[]
-  assumptions   Assumption[]
-  risks         Risk[]
-  growthAreas   GrowthArea[]
+  assumptions       Assumption[]
+  risks             Risk[]
+  growthAreas       GrowthArea[]
 }
 
 model InitiativeInsight {
@@ -364,19 +375,19 @@ model InitiativeRelationship {
 
 // A condition the Account strategy depends on (docs/data-model.md "Assumption").
 model Assumption {
-  id                   String           @id @default(uuid())
-  accountId            String
-  account              Account          @relation(fields: [accountId], references: [id])
-  statement            String
-  goalId               String?
-  goal                 Goal?            @relation(fields: [goalId], references: [id])
-  initiativeId         String?
-  initiative           Initiative?      @relation(fields: [initiativeId], references: [id])
-  supportingInsightId  String?
-  confidence           ConfidenceLevel
-  status               AssumptionStatus @default(UNVALIDATED)
-  validationOwner      String?
-  validationDate       DateTime?
+  id                  String           @id @default(uuid())
+  accountId           String
+  account             Account          @relation(fields: [accountId], references: [id])
+  statement           String
+  goalId              String?
+  goal                Goal?            @relation(fields: [goalId], references: [id])
+  initiativeId        String?
+  initiative          Initiative?      @relation(fields: [initiativeId], references: [id])
+  supportingInsightId String?
+  confidence          ConfidenceLevel
+  status              AssumptionStatus @default(UNVALIDATED)
+  validationOwner     String?
+  validationDate      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -384,12 +395,12 @@ model Assumption {
 
 // A threat to the strategy (docs/data-model.md "Risk").
 model Risk {
-  id           String    @id @default(uuid())
+  id           String      @id @default(uuid())
   accountId    String
-  account      Account   @relation(fields: [accountId], references: [id])
+  account      Account     @relation(fields: [accountId], references: [id])
   description  String
   goalId       String?
-  goal         Goal?     @relation(fields: [goalId], references: [id])
+  goal         Goal?       @relation(fields: [goalId], references: [id])
   initiativeId String?
   initiative   Initiative? @relation(fields: [initiativeId], references: [id])
   likelihood   RiskLevel
@@ -423,21 +434,21 @@ model GrowthArea {
 }
 
 model Action {
-  id            String       @id @default(uuid())
+  id            String          @id @default(uuid())
   accountId     String
-  account       Account      @relation(fields: [accountId], references: [id])
+  account       Account         @relation(fields: [accountId], references: [id])
   initiativeId  String?
-  initiative    Initiative?  @relation(fields: [initiativeId], references: [id])
+  initiative    Initiative?     @relation(fields: [initiativeId], references: [id])
   opportunityId String?
-  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  opportunity   Opportunity?    @relation(fields: [opportunityId], references: [id])
   reviewId      String?
-  review        AccountReview? @relation(fields: [reviewId], references: [id])
+  review        AccountReview?  @relation(fields: [reviewId], references: [id])
   title         String
   description   String?
   owner         String?
   dueDate       DateTime?
   priority      ImportanceLevel
-  status        ActionStatus @default(PROPOSED)
+  status        ActionStatus    @default(PROPOSED)
   outcome       String?
   completedAt   DateTime?
 
@@ -447,28 +458,28 @@ model Action {
 }
 
 model Opportunity {
-  id                            String           @id @default(uuid())
-  accountId                     String
-  account                       Account          @relation(fields: [accountId], references: [id])
-  initiativeId                  String?
-  initiative                    Initiative?      @relation(fields: [initiativeId], references: [id])
-  title                         String
-  customerNeed                  String
-  businessValue                 String?
-  stage                         OpportunityStage @default(POTENTIAL)
-  estimatedValue                Float?
-  estimatedValueCurrency        String?
-  probability                   Int?
-  sponsorRelationshipId         String?
-  decisionMakerRelationshipId   String?
-  decisionProcess               String?
-  budgetStatus                  String?
-  timing                        String?
-  novaProposition               String?
-  competition                   String?
-  nextStep                      String?
-  nextStepDate                  DateTime?
-  status                        String           @default("open")
+  id                          String           @id @default(uuid())
+  accountId                   String
+  account                     Account          @relation(fields: [accountId], references: [id])
+  initiativeId                String?
+  initiative                  Initiative?      @relation(fields: [initiativeId], references: [id])
+  title                       String
+  customerNeed                String
+  businessValue               String?
+  stage                       OpportunityStage @default(POTENTIAL)
+  estimatedValue              Float?
+  estimatedValueCurrency      String?
+  probability                 Int?
+  sponsorRelationshipId       String?
+  decisionMakerRelationshipId String?
+  decisionProcess             String?
+  budgetStatus                String?
+  timing                      String?
+  novaProposition             String?
+  competition                 String?
+  nextStep                    String?
+  nextStepDate                DateTime?
+  status                      String           @default("open")
 
   createdAt      DateTime                   @default(now())
   updatedAt      DateTime                   @updatedAt
@@ -479,13 +490,13 @@ model Opportunity {
 
 // One row per qualification dimension per Opportunity (data-model.md section 19).
 model OpportunityQualification {
-  id            String                 @id @default(uuid())
-  opportunityId String
-  opportunity   Opportunity            @relation(fields: [opportunityId], references: [id])
-  dimension     QualificationDimension
-  state         QualificationState     @default(MISSING)
-  note          String?
-  lastAssessedAt DateTime              @default(now())
+  id             String                 @id @default(uuid())
+  opportunityId  String
+  opportunity    Opportunity            @relation(fields: [opportunityId], references: [id])
+  dimension      QualificationDimension
+  state          QualificationState     @default(MISSING)
+  note           String?
+  lastAssessedAt DateTime               @default(now())
   assessedBy     String?
 
   @@unique([opportunityId, dimension])
@@ -501,19 +512,19 @@ model OpportunityInsight {
 }
 
 model AccountReview {
-  id               String       @id @default(uuid())
-  accountId        String
-  account          Account      @relation(fields: [accountId], references: [id])
-  reviewDate       DateTime
+  id                String       @id @default(uuid())
+  accountId         String
+  account           Account      @relation(fields: [accountId], references: [id])
+  reviewDate        DateTime
   reviewPeriodStart DateTime
   reviewPeriodEnd   DateTime
-  participants     String? // comma-separated for the prototype
-  status           ReviewStatus @default(DRAFT)
-  generatedSummary String? // JSON-encoded structured summary
-  editedSummary    String? // JSON-encoded human-edited version
-  decisions        String? // JSON-encoded list of decision items (data-model.md "Decision structure within a Review")
-  finalisedBy      String?
-  finalisedAt      DateTime?
+  participants      String? // comma-separated for the prototype
+  status            ReviewStatus @default(DRAFT)
+  generatedSummary  String? // JSON-encoded structured summary
+  editedSummary     String? // JSON-encoded human-edited version
+  decisions         String? // JSON-encoded list of decision items (data-model.md "Decision structure within a Review")
+  finalisedBy       String?
+  finalisedAt       DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
