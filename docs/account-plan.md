@@ -592,18 +592,24 @@ MATILDA must not silently change validated Account strategy.
 
 The prototype's "MATILDA Changes" section on the Account Plan page implements the signal this
 chapter describes as any Insight flagged `affects_account_plan` (data-model.md "Insight"), and
-offers two of the five responses above:
+offers four of the five responses above:
 
 - **Accept update** → "Accept & Link": link the Insight to the Goal or Initiative it affects.
   The link itself is the durable record of acceptance.
+- **Edit suggestion**: update the Insight's statement and/or "so what for NOVA" text. Only
+  changes the text — it does not also accept, link, or dismiss, since editing and deciding are
+  different responses.
+- **Request more evidence**: creates a Knowledge Gap, linked back to the Insight, capturing
+  what's missing. The Insight stays in the change queue (not accepted, not dismissed) until the
+  Gap is answered; the card shows the requested evidence and its status.
 - **Reject suggestion** → "Dismiss": acknowledge the Insight without linking it to anything.
 
 Rejecting the Insight outright reuses the existing action from the Customer Intelligence
 Insights page rather than a separate control here — the Insight is the same record either way.
-"Edit suggestion", "Request more evidence", and "Defer to Account Review" are not built yet;
-there is no richer change-type categorisation (goal-review-needed vs. new-strategic-signal vs.
-relationship-risk, per the examples above) either — every flagged Insight is presented the same
-way for now.
+"Defer to Account Review" is not built yet — there is no notion of queuing an item for a
+specific future Review. There is also no richer change-type categorisation (goal-review-needed
+vs. new-strategic-signal vs. relationship-risk, per the examples above) — every flagged Insight
+is presented the same way for now.
 
 ---
 

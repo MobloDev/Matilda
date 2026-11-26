@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Section } from "@/components/ui";
-import { dismissPlanImpact, linkInsightToPlan } from "./actions";
+import {
+  dismissPlanImpact,
+  editSuggestion,
+  linkInsightToPlan,
+  requestMoreEvidence,
+} from "./actions";
 import { rejectInsight } from "../customer-intelligence/actions";
 
 // Importance/priority enums are stored as plain strings in SQLite, so we
@@ -419,7 +424,11 @@ export default async function AccountPlanPage() {
           .
         </p>
         <ul className="flex flex-col gap-3">
-          {account.insights.map((insight) => (
+          {account.insights.map((insight) => {
+            const requestedEvidence = account.knowledgeGaps.filter(
+              (gap) => gap.relatedInsightId === insight.id,
+            );
+            return (
             <li
               key={insight.id}
               className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
@@ -438,6 +447,18 @@ export default async function AccountPlanPage() {
                 {insight.sourceLinks.map((link) => link.source.title).join(", ") ||
                   "none"}
               </p>
+              {requestedEvidence.length > 0 && (
+                <div className="mt-2 flex flex-col gap-1">
+                  {requestedEvidence.map((gap) => (
+                    <p
+                      key={gap.id}
+                      className="text-xs text-amber-700 dark:text-amber-400"
+                    >
+                      Evidence requested: {gap.question} ({gap.status.toLowerCase()})
+                    </p>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-900">
                 <form action={linkInsightToPlan} className="flex items-center gap-2">
@@ -482,6 +503,67 @@ export default async function AccountPlanPage() {
                 </form>
 
                 <details className="text-xs">
+                  <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                    Edit suggestion
+                  </summary>
+                  <form action={editSuggestion} className="mt-2 flex flex-col gap-2">
+                    <input type="hidden" name="insightId" value={insight.id} />
+                    <label className="flex flex-col gap-1">
+                      Statement
+                      <textarea
+                        name="statement"
+                        defaultValue={insight.statement}
+                        rows={2}
+                        className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      Why it may affect the plan
+                      <textarea
+                        name="soWhat"
+                        defaultValue={insight.soWhat ?? ""}
+                        rows={2}
+                        className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                    >
+                      Save edit
+                    </button>
+                  </form>
+                </details>
+
+                <details className="text-xs">
+                  <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                    Request more evidence
+                  </summary>
+                  <form
+                    action={requestMoreEvidence}
+                    className="mt-2 flex flex-col gap-2"
+                  >
+                    <input type="hidden" name="insightId" value={insight.id} />
+                    <textarea
+                      name="question"
+                      defaultValue={`What additional evidence confirms: ${insight.title}?`}
+                      rows={2}
+                      className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                    />
+                    <p className="text-zinc-500">
+                      Creates a Knowledge Gap tracking this; the change stays in
+                      this queue until it's answered.
+                    </p>
+                    <button
+                      type="submit"
+                      className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                    >
+                      Request evidence
+                    </button>
+                  </form>
+                </details>
+
+                <details className="text-xs">
                   <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium text-red-700 dark:border-zinc-700 dark:text-red-400">
                     Reject Insight
                   </summary>
@@ -503,7 +585,8 @@ export default async function AccountPlanPage() {
                 </details>
               </div>
             </li>
-          ))}
+            );
+          })}
           {account.insights.length === 0 && (
             <p className="text-sm text-zinc-500">
               No changes are currently flagged as affecting this plan.
