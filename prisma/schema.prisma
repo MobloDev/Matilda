@@ -328,6 +328,7 @@ model Insight {
   initiativeLinks       InitiativeInsight[]
   opportunityLinks      OpportunityInsight[]
   briefLinks            IntelligenceBriefInsight[]
+  reviewLinks           InsightReview[]
 }
 
 model Source {
@@ -753,10 +754,23 @@ model AccountReview {
   finalisedBy       String?
   finalisedAt       DateTime?
 
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
-  actions   Action[]
-  gapLinks  KnowledgeGapReview[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  actions      Action[]
+  gapLinks     KnowledgeGapReview[]
+  insightLinks InsightReview[]
+}
+
+// Many-to-many: an Insight deferred to a specific Account Review for
+// discussion/decision there, rather than accepted or dismissed now
+// (docs/account-plan.md §11, "Defer to Account Review").
+model InsightReview {
+  insightId String
+  insight   Insight       @relation(fields: [insightId], references: [id])
+  reviewId  String
+  review    AccountReview @relation(fields: [reviewId], references: [id])
+
+  @@id([insightId, reviewId])
 }
 
 // Records one execution of the (mocked, for the prototype) Customer Intelligence

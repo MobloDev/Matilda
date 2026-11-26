@@ -19,6 +19,7 @@ async function main() {
   await prisma.knowledgeGapOpportunity.deleteMany();
   await prisma.knowledgeGapReview.deleteMany();
   await prisma.knowledgeGapAction.deleteMany();
+  await prisma.insightReview.deleteMany();
   await prisma.action.deleteMany();
   await prisma.opportunityQualification.deleteMany();
   await prisma.opportunityInsight.deleteMany();

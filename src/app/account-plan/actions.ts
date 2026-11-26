@@ -1,13 +1,12 @@
 "use server";
 
 // Server Actions for the Account Plan's "MATILDA change layer"
-// (docs/account-plan.md §11). V1 scope: Accept & Link, Edit suggestion,
-// Request more evidence, and Dismiss. A full "Reject" of the Insight itself
-// already exists on the Customer Intelligence Insights page — re-offering it
-// here would just duplicate that action, not add a new one, so it's
-// deliberately left out of this file. "Defer to Account Review" remains
-// unbuilt — there is no notion yet of queuing an item for a specific future
-// Review.
+// (docs/account-plan.md §11): Accept & Link, Edit suggestion, Request more
+// evidence, Defer to Account Review, and Dismiss — all five responses that
+// chapter describes. A full "Reject" of the Insight itself already exists on
+// the Customer Intelligence Insights page — re-offering it here would just
+// duplicate that action, not add a new one, so it's deliberately left out of
+// this file.
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -106,6 +105,24 @@ export async function requestMoreEvidence(formData: FormData) {
       creationType: "HUMAN_CONTEXTUAL",
       relatedInsightId: insight.id,
     },
+  });
+
+  revalidateAccountPages();
+}
+
+// "Defer to Account Review": the decision on this change will be made at a
+// specific upcoming Review rather than now. Links the Insight to that
+// Review; affectsAccountPlan is untouched, since deferring is not itself a
+// decision — the item stays visible (with a "deferred" note) until someone
+// actually accepts, dismisses, or rejects it, whether that happens before
+// or during the Review.
+export async function deferToReview(formData: FormData) {
+  const insightId = String(formData.get("insightId"));
+  const reviewId = String(formData.get("reviewId") ?? "");
+  if (!insightId || !reviewId) return;
+
+  await prisma.insightReview.create({
+    data: { insightId, reviewId },
   });
 
   revalidateAccountPages();

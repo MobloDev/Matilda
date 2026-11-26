@@ -720,6 +720,14 @@ Until a dedicated Decision entity is justified, each decision item should contai
 - related entity links; and
 - resulting Action IDs.
 
+### Insight–Review link
+
+Many-to-many link table `insight_reviews` (`insight_id` + `review_id`) — an Insight deferred to
+a specific Review for discussion/decision there, rather than accepted or dismissed immediately
+(`account-plan.md` §11, "Defer to Account Review"). Deferring does not change the Insight's
+`affects_account_plan` flag; the item stays visible in the Account Plan's change queue until a
+human takes a final action on it, whether that happens before or during the Review.
+
 ### Rules
 
 - Generated summary is not a separate source of Account truth.

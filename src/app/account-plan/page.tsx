@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Section } from "@/components/ui";
 import {
+  deferToReview,
   dismissPlanImpact,
   editSuggestion,
   linkInsightToPlan,
@@ -51,7 +52,14 @@ export default async function AccountPlanPage() {
       },
       insights: {
         where: { affectsAccountPlan: true },
-        include: { sourceLinks: { include: { source: true } } },
+        include: {
+          sourceLinks: { include: { source: true } },
+          reviewLinks: { include: { review: true } },
+        },
+      },
+      reviews: {
+        where: { status: { not: "FINALISED" } },
+        orderBy: { reviewDate: "asc" },
       },
     },
   });
@@ -459,6 +467,19 @@ export default async function AccountPlanPage() {
                   ))}
                 </div>
               )}
+              {insight.reviewLinks.length > 0 && (
+                <div className="mt-2 flex flex-col gap-1">
+                  {insight.reviewLinks.map((link) => (
+                    <p
+                      key={link.reviewId}
+                      className="text-xs text-amber-700 dark:text-amber-400"
+                    >
+                      Deferred to Account Review:{" "}
+                      {link.review.reviewDate.toLocaleDateString()}
+                    </p>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-900">
                 <form action={linkInsightToPlan} className="flex items-center gap-2">
@@ -562,6 +583,52 @@ export default async function AccountPlanPage() {
                     </button>
                   </form>
                 </details>
+
+                {(() => {
+                  const deferredReviewIds = new Set(
+                    insight.reviewLinks.map((link) => link.reviewId),
+                  );
+                  const availableReviews = account.reviews.filter(
+                    (review) => !deferredReviewIds.has(review.id),
+                  );
+                  if (availableReviews.length === 0) return null;
+                  return (
+                    <details className="text-xs">
+                      <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                        Defer to Account Review
+                      </summary>
+                      <form
+                        action={deferToReview}
+                        className="mt-2 flex flex-col gap-2"
+                      >
+                        <input type="hidden" name="insightId" value={insight.id} />
+                        <select
+                          name="reviewId"
+                          required
+                          className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+                        >
+                          <option value="">Review…</option>
+                          {availableReviews.map((review) => (
+                            <option key={review.id} value={review.id}>
+                              {review.reviewDate.toLocaleDateString()} (
+                              {review.status.toLowerCase().replace("_", " ")})
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-zinc-500">
+                          The decision will be made at that Review instead of now;
+                          this change stays in the queue until then.
+                        </p>
+                        <button
+                          type="submit"
+                          className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                        >
+                          Defer
+                        </button>
+                      </form>
+                    </details>
+                  );
+                })()}
 
                 <details className="text-xs">
                   <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium text-red-700 dark:border-zinc-700 dark:text-red-400">
