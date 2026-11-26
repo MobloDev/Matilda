@@ -68,9 +68,12 @@ const INITIATIVE_STATUS_OPTIONS = [
   "COMPLETED",
   "STOPPED",
 ].map((v) => ({ value: v, label: v.replace("_", " ") }));
-const RELATIONSHIP_STRENGTH_OPTIONS = ["UNKNOWN", "WEAK", "DEVELOPING", "STRONG"].map(
-  (v) => ({ value: v, label: v }),
-);
+const RELATIONSHIP_STRENGTH_OPTIONS = [
+  "UNKNOWN",
+  "WEAK",
+  "DEVELOPING",
+  "STRONG",
+].map((v) => ({ value: v, label: v }));
 const DECISION_ROLE_OPTIONS = [
   { value: "sponsor", label: "Sponsor" },
   { value: "decision maker", label: "Decision maker" },
@@ -82,9 +85,11 @@ const GROWTH_POSTURE_OPTIONS = ["PURSUE", "MONITOR", "REJECT"].map((v) => ({
   value: v,
   label: v,
 }));
-const ASSUMPTION_STATUS_OPTIONS = ["UNVALIDATED", "CONFIRMED", "INVALIDATED"].map(
-  (v) => ({ value: v, label: v }),
-);
+const ASSUMPTION_STATUS_OPTIONS = [
+  "UNVALIDATED",
+  "CONFIRMED",
+  "INVALIDATED",
+].map((v) => ({ value: v, label: v }));
 const RISK_LEVEL_OPTIONS = ["LOW", "MEDIUM", "HIGH"].map((v) => ({
   value: v,
   label: v,
@@ -154,9 +159,9 @@ export default async function AccountPlanPage({
     return (
       <main className="mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center gap-2 p-16 text-center">
         <p className="text-lg font-medium">No Account found.</p>
-        <p className="text-zinc-500">
+        <p className="text-ink/70">
           Run{" "}
-          <code className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">
+          <code className="rounded bg-neutral-light px-1.5 py-0.5">
             npm run seed
           </code>{" "}
           to load the demo scenario.
@@ -187,7 +192,8 @@ export default async function AccountPlanPage({
   const next90Actions = allOpenActions.filter(
     (a) => !a.dueDate || a.dueDate <= ninetyDaysOut,
   );
-  const visibleActions = actionsView === "all" ? account.actions : next90Actions;
+  const visibleActions =
+    actionsView === "all" ? account.actions : next90Actions;
 
   const relationshipsWithInitiatives = account.relationships.filter(
     (relationship) => relationship.initiativeLinks.length > 0,
@@ -202,7 +208,7 @@ export default async function AccountPlanPage({
       <header className="flex flex-col gap-2">
         <Link
           href="/"
-          className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          className="text-sm font-medium text-brand-ink hover:underline"
         >
           ← Back to Account Overview
         </Link>
@@ -212,20 +218,24 @@ export default async function AccountPlanPage({
         <h1 className="text-2xl font-semibold tracking-tight">
           Account Plan — {account.name}
         </h1>
-        <div className="flex flex-wrap gap-2 pt-1 text-sm text-zinc-500">
+        <div className="flex flex-wrap gap-2 pt-1 text-sm text-ink/70">
           <span>Owner: {account.accountManager}</span>
           <Badge>{account.planStatus.replace("_", " ")}</Badge>
           {account.timeHorizon && <span>· Horizon: {account.timeHorizon}</span>}
           {account.lastReviewedAt && (
-            <span>· Last reviewed: {account.lastReviewedAt.toLocaleDateString()}</span>
+            <span>
+              · Last reviewed: {account.lastReviewedAt.toLocaleDateString()}
+            </span>
           )}
           {account.reviewDueAt && (
-            <span>· Next review due: {account.reviewDueAt.toLocaleDateString()}</span>
+            <span>
+              · Next review due: {account.reviewDueAt.toLocaleDateString()}
+            </span>
           )}
         </div>
         <Link
           href="/customer-intelligence"
-          className="mt-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          className="mt-1 text-sm font-medium text-brand-ink hover:underline"
         >
           View Customer Intelligence →
         </Link>
@@ -233,7 +243,7 @@ export default async function AccountPlanPage({
 
       {/* 1. Our Ambition — account-plan.md §4 */}
       <Section title="Our Ambition">
-        <p className="text-zinc-700 dark:text-zinc-300">
+        <p className="text-ink">
           {account.ambition ?? "No ambition recorded yet for this Account."}
         </p>
 
@@ -266,7 +276,7 @@ export default async function AccountPlanPage({
             />
             <button
               type="submit"
-              className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+              className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
             >
               Save
             </button>
@@ -275,10 +285,7 @@ export default async function AccountPlanPage({
 
         <ul className="flex flex-col gap-3">
           {account.goals.map((goal) => (
-            <li
-              key={goal.id}
-              className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-            >
+            <li key={goal.id} className="rounded-lg border border-border p-4 ">
               <div className="flex items-center justify-between gap-2">
                 <p className="font-medium">{goal.title}</p>
                 <div className="flex gap-2">
@@ -286,14 +293,12 @@ export default async function AccountPlanPage({
                   <Badge>{goal.status.replace("_", " ")}</Badge>
                 </div>
               </div>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                {goal.rationale}
-              </p>
-              <p className="mt-2 text-xs text-zinc-500">
+              <p className="mt-1 text-sm text-ink/80">{goal.rationale}</p>
+              <p className="mt-2 text-xs text-ink/70">
                 Success criteria: {goal.successCriteria}
               </p>
               {goal.progressAssessment && (
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-ink/70">
                   Progress: {goal.progressAssessment}
                 </p>
               )}
@@ -301,7 +306,12 @@ export default async function AccountPlanPage({
               <FormDisclosure label="Edit">
                 <form action={updateGoal} className="flex flex-col gap-3">
                   <input type="hidden" name="goalId" value={goal.id} />
-                  <TextField name="title" label="Title" defaultValue={goal.title} required />
+                  <TextField
+                    name="title"
+                    label="Title"
+                    defaultValue={goal.title}
+                    required
+                  />
                   <TextAreaField
                     name="description"
                     label="Description"
@@ -327,15 +337,27 @@ export default async function AccountPlanPage({
                     options={IMPORTANCE_OPTIONS}
                     required
                   />
-                  <TextField name="horizon" label="Horizon" defaultValue={goal.horizon} />
+                  <TextField
+                    name="horizon"
+                    label="Horizon"
+                    defaultValue={goal.horizon}
+                  />
                   <TextAreaField
                     name="successCriteria"
                     label="Success criteria"
                     defaultValue={goal.successCriteria}
                     required
                   />
-                  <TextField name="baseline" label="Baseline" defaultValue={goal.baseline} />
-                  <TextField name="target" label="Target" defaultValue={goal.target} />
+                  <TextField
+                    name="baseline"
+                    label="Baseline"
+                    defaultValue={goal.baseline}
+                  />
+                  <TextField
+                    name="target"
+                    label="Target"
+                    defaultValue={goal.target}
+                  />
                   <SelectField
                     name="status"
                     label="Status"
@@ -350,7 +372,7 @@ export default async function AccountPlanPage({
                   />
                   <button
                     type="submit"
-                    className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+                    className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
                   >
                     Save
                   </button>
@@ -359,7 +381,7 @@ export default async function AccountPlanPage({
             </li>
           ))}
           {account.goals.length === 0 && (
-            <p className="text-sm text-zinc-500">No Goals recorded yet.</p>
+            <p className="text-sm text-ink/70">No Goals recorded yet.</p>
           )}
         </ul>
 
@@ -381,17 +403,25 @@ export default async function AccountPlanPage({
               options={IMPORTANCE_OPTIONS}
               required
             />
-            <TextField name="horizon" label="Horizon" placeholder="e.g. next 2 quarters" />
-            <TextAreaField name="successCriteria" label="Success criteria" required />
+            <TextField
+              name="horizon"
+              label="Horizon"
+              placeholder="e.g. next 2 quarters"
+            />
+            <TextAreaField
+              name="successCriteria"
+              label="Success criteria"
+              required
+            />
             <TextField name="baseline" label="Baseline" />
             <TextField name="target" label="Target" />
             <Field label="Status">
               <input type="hidden" name="status" value="PROPOSED" />
-              <span className="text-sm text-zinc-700 dark:text-zinc-300">Proposed</span>
+              <span className="text-sm text-ink">Proposed</span>
             </Field>
             <button
               type="submit"
-              className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+              className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
             >
               Create Goal
             </button>
@@ -408,14 +438,15 @@ export default async function AccountPlanPage({
               {account.relationships.map((relationship) => (
                 <li
                   key={relationship.id}
-                  className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+                  className="flex flex-col gap-2 rounded-lg border border-border p-3 "
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-medium">{relationship.contactName}</p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-ink/70">
                         {relationship.role ?? "Role unknown"}
-                        {relationship.decisionRole && ` · ${relationship.decisionRole}`}
+                        {relationship.decisionRole &&
+                          ` · ${relationship.decisionRole}`}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -427,8 +458,15 @@ export default async function AccountPlanPage({
                   </div>
 
                   <FormDisclosure label="Edit">
-                    <form action={updateRelationship} className="flex flex-col gap-3">
-                      <input type="hidden" name="relationshipId" value={relationship.id} />
+                    <form
+                      action={updateRelationship}
+                      className="flex flex-col gap-3"
+                    >
+                      <input
+                        type="hidden"
+                        name="relationshipId"
+                        value={relationship.id}
+                      />
                       <TextField
                         name="contactName"
                         label="Contact name"
@@ -494,7 +532,7 @@ export default async function AccountPlanPage({
                       />
                       <button
                         type="submit"
-                        className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+                        className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
                       >
                         Save
                       </button>
@@ -503,16 +541,24 @@ export default async function AccountPlanPage({
                 </li>
               ))}
               {account.relationships.length === 0 && (
-                <p className="text-sm text-zinc-500">No Relationships recorded yet.</p>
+                <p className="text-sm text-ink/70">
+                  No Relationships recorded yet.
+                </p>
               )}
             </ul>
 
             <div className="mt-3">
               <FormDisclosure label="+ Add Relationship">
-                <form action={createRelationship} className="flex flex-col gap-3">
+                <form
+                  action={createRelationship}
+                  className="flex flex-col gap-3"
+                >
                   <input type="hidden" name="accountId" value={account.id} />
                   <TextField name="contactName" label="Contact name" required />
-                  <TextField name="organisationOrUnit" label="Organisation / unit" />
+                  <TextField
+                    name="organisationOrUnit"
+                    label="Organisation / unit"
+                  />
                   <TextField name="role" label="Role" />
                   <SelectField
                     name="decisionRole"
@@ -539,12 +585,18 @@ export default async function AccountPlanPage({
                     required
                   />
                   <TextField name="desiredPosition" label="Desired position" />
-                  <TextAreaField name="plannedApproach" label="Planned approach" />
-                  <DateField name="lastInteractionAt" label="Last interaction" />
+                  <TextAreaField
+                    name="plannedApproach"
+                    label="Planned approach"
+                  />
+                  <DateField
+                    name="lastInteractionAt"
+                    label="Last interaction"
+                  />
                   <TextAreaField name="notes" label="Notes" />
                   <button
                     type="submit"
-                    className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+                    className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
                   >
                     Add Relationship
                   </button>
@@ -555,16 +607,19 @@ export default async function AccountPlanPage({
 
           <div>
             <p className="mb-2 text-sm font-medium">Commercial position</p>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              {initiatives.reduce((count, i) => count + i.opportunities.length, 0)}{" "}
-              active Opportunity(ies) across {initiatives.length} Initiative(s). See the
-              Account Overview for qualification detail.
+            <p className="text-sm text-ink/80">
+              {initiatives.reduce(
+                (count, i) => count + i.opportunities.length,
+                0,
+              )}{" "}
+              active Opportunity(ies) across {initiatives.length} Initiative(s).
+              See the Account Overview for qualification detail.
             </p>
-            <p className="mt-2 text-xs text-zinc-500">
-              Opportunity authoring is not built here yet — a future version will pull
-              Opportunities directly from CRM, with: Title, Opportunity type (new
-              business / existing business), Contact, Estimated revenue, and Estimated
-              close date.
+            <p className="mt-2 text-xs text-ink/70">
+              Opportunity authoring is not built here yet — a future version
+              will pull Opportunities directly from CRM, with: Title,
+              Opportunity type (new business / existing business), Contact,
+              Estimated revenue, and Estimated close date.
             </p>
           </div>
         </div>
@@ -575,7 +630,7 @@ export default async function AccountPlanPage({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-xs uppercase text-zinc-500 dark:border-zinc-800">
+              <tr className="border-b border-border text-xs uppercase text-ink/70 ">
                 <th className="py-2 pr-3">Area</th>
                 <th className="py-2 pr-3">NOVA today</th>
                 <th className="py-2 pr-3">Customer priority</th>
@@ -589,7 +644,7 @@ export default async function AccountPlanPage({
               {account.growthAreas.map((area) => (
                 <tr
                   key={area.id}
-                  className="border-b border-zinc-100 align-top last:border-0 dark:border-zinc-900"
+                  className="border-b border-border/40 align-top last:border-0 "
                 >
                   <td className="py-2 pr-3 font-medium">{area.name}</td>
                   <td className="py-2 pr-3">{area.novaToday}</td>
@@ -601,15 +656,24 @@ export default async function AccountPlanPage({
                   </td>
                   <td className="py-2">
                     <details className="text-xs">
-                      <summary className="cursor-pointer rounded border border-zinc-300 px-2 py-1 font-medium dark:border-zinc-700">
+                      <summary className="cursor-pointer rounded border border-border px-2 py-1 font-medium ">
                         Edit
                       </summary>
                       <form
                         action={updateGrowthArea}
                         className="mt-2 flex w-56 flex-col gap-2"
                       >
-                        <input type="hidden" name="growthAreaId" value={area.id} />
-                        <TextField name="name" label="Name" defaultValue={area.name} required />
+                        <input
+                          type="hidden"
+                          name="growthAreaId"
+                          value={area.id}
+                        />
+                        <TextField
+                          name="name"
+                          label="Name"
+                          defaultValue={area.name}
+                          required
+                        />
                         <SelectField
                           name="novaToday"
                           label="NOVA today"
@@ -631,7 +695,11 @@ export default async function AccountPlanPage({
                           options={IMPORTANCE_OPTIONS}
                           required
                         />
-                        <TextField name="timing" label="Timing" defaultValue={area.timing} />
+                        <TextField
+                          name="timing"
+                          label="Timing"
+                          defaultValue={area.timing}
+                        />
                         <SelectField
                           name="posture"
                           label="Posture"
@@ -646,7 +714,7 @@ export default async function AccountPlanPage({
                         />
                         <button
                           type="submit"
-                          className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                          className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                         >
                           Save
                         </button>
@@ -658,7 +726,7 @@ export default async function AccountPlanPage({
             </tbody>
           </table>
           {account.growthAreas.length === 0 && (
-            <p className="text-sm text-zinc-500">No Growth Areas assessed yet.</p>
+            <p className="text-sm text-ink/70">No Growth Areas assessed yet.</p>
           )}
         </div>
 
@@ -667,15 +735,29 @@ export default async function AccountPlanPage({
             <form action={createGrowthArea} className="flex flex-col gap-3">
               <input type="hidden" name="accountId" value={account.id} />
               <TextField name="name" label="Name" required />
-              <SelectField name="novaToday" label="NOVA today" options={IMPORTANCE_OPTIONS} required />
+              <SelectField
+                name="novaToday"
+                label="NOVA today"
+                options={IMPORTANCE_OPTIONS}
+                required
+              />
               <SelectField
                 name="customerPriority"
                 label="Customer priority"
                 options={IMPORTANCE_OPTIONS}
                 required
               />
-              <SelectField name="potential" label="Potential" options={IMPORTANCE_OPTIONS} required />
-              <TextField name="timing" label="Timing" placeholder="e.g. Now, Near term" />
+              <SelectField
+                name="potential"
+                label="Potential"
+                options={IMPORTANCE_OPTIONS}
+                required
+              />
+              <TextField
+                name="timing"
+                label="Timing"
+                placeholder="e.g. Now, Near term"
+              />
               <SelectField
                 name="posture"
                 label="Posture"
@@ -683,10 +765,13 @@ export default async function AccountPlanPage({
                 options={GROWTH_POSTURE_OPTIONS}
                 required
               />
-              <TextAreaField name="recommendedApproach" label="Recommended approach" />
+              <TextAreaField
+                name="recommendedApproach"
+                label="Recommended approach"
+              />
               <button
                 type="submit"
-                className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+                className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
               >
                 Create Growth Area
               </button>
@@ -701,7 +786,7 @@ export default async function AccountPlanPage({
           {initiatives.map((initiative) => (
             <li
               key={initiative.id}
-              className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+              className="rounded-lg border border-border p-4 "
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="font-medium">{initiative.title}</p>
@@ -710,21 +795,23 @@ export default async function AccountPlanPage({
                   <Badge>{initiative.status.replace("_", " ")}</Badge>
                 </div>
               </div>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-ink/70">
                 Supports Goal: {initiative.goal.title}
               </p>
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                {initiative.rationale}
-              </p>
+              <p className="mt-2 text-sm text-ink/80">{initiative.rationale}</p>
               {initiative.nextMilestone && (
-                <p className="mt-2 text-xs text-zinc-500">
+                <p className="mt-2 text-xs text-ink/70">
                   Next milestone: {initiative.nextMilestone}
                 </p>
               )}
 
               <FormDisclosure label="Edit">
                 <form action={updateInitiative} className="flex flex-col gap-3">
-                  <input type="hidden" name="initiativeId" value={initiative.id} />
+                  <input
+                    type="hidden"
+                    name="initiativeId"
+                    value={initiative.id}
+                  />
                   <TextField
                     name="title"
                     label="Title"
@@ -781,7 +868,7 @@ export default async function AccountPlanPage({
                   />
                   <button
                     type="submit"
-                    className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+                    className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
                   >
                     Save
                   </button>
@@ -790,7 +877,7 @@ export default async function AccountPlanPage({
             </li>
           ))}
           {initiatives.length === 0 && (
-            <p className="text-sm text-zinc-500">No Initiatives recorded yet.</p>
+            <p className="text-sm text-ink/70">No Initiatives recorded yet.</p>
           )}
         </ul>
 
@@ -800,7 +887,10 @@ export default async function AccountPlanPage({
             <SelectField
               name="goalId"
               label="Supports Goal"
-              options={account.goals.map((g) => ({ value: g.id, label: g.title }))}
+              options={account.goals.map((g) => ({
+                value: g.id,
+                label: g.title,
+              }))}
               required
             />
             <TextField name="title" label="Title" required />
@@ -820,14 +910,14 @@ export default async function AccountPlanPage({
             />
             <Field label="Status">
               <input type="hidden" name="status" value="PROPOSED" />
-              <span className="text-sm text-zinc-700 dark:text-zinc-300">Proposed</span>
+              <span className="text-sm text-ink">Proposed</span>
             </Field>
             <DateField name="startDate" label="Start date" />
             <DateField name="targetDate" label="Target date" />
             <TextField name="nextMilestone" label="Next milestone" />
             <button
               type="submit"
-              className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+              className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
             >
               Create Initiative
             </button>
@@ -841,11 +931,11 @@ export default async function AccountPlanPage({
           {relationshipsWithInitiatives.map((relationship) => (
             <li
               key={relationship.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 "
             >
               <div>
                 <p className="font-medium">{relationship.contactName}</p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-ink/70">
                   Critical to:{" "}
                   {relationship.initiativeLinks
                     .map((link) => link.initiative.title)
@@ -856,7 +946,7 @@ export default async function AccountPlanPage({
             </li>
           ))}
           {relationshipsWithInitiatives.length === 0 && (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-ink/70">
               No Relationship is yet marked critical to an Initiative.
             </p>
           )}
@@ -864,16 +954,16 @@ export default async function AccountPlanPage({
       </Section>
 
       {/* 6. Execution Plan — account-plan.md §9. Account-level Actions, not
-          linked to an Initiative — a deliberate simplification (see the
-          Fase A authoring brainstorm). */}
+ linked to an Initiative — a deliberate simplification (see the
+ Fase A authoring brainstorm). */}
       <Section title="Execution Plan">
         <div className="flex items-center gap-3 text-sm">
           <Link
             href="/account-plan"
             className={
               !actionsView || actionsView !== "all"
-                ? "font-medium text-blue-600 dark:text-blue-400"
-                : "text-zinc-500 hover:underline"
+                ? "font-medium text-brand-ink"
+                : "text-ink/70 hover:underline"
             }
           >
             Next 90 days
@@ -882,8 +972,8 @@ export default async function AccountPlanPage({
             href="/account-plan?actionsView=all"
             className={
               actionsView === "all"
-                ? "font-medium text-blue-600 dark:text-blue-400"
-                : "text-zinc-500 hover:underline"
+                ? "font-medium text-brand-ink"
+                : "text-ink/70 hover:underline"
             }
           >
             All actions
@@ -894,16 +984,16 @@ export default async function AccountPlanPage({
           {visibleActions.map((action) => (
             <li
               key={action.id}
-              className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+              className="flex flex-col gap-2 rounded-lg border border-border p-3 "
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-medium">{action.title}</p>
                 <div className="flex items-center gap-2">
-                  {action.dueDate && action.dueDate < now && action.status !== "COMPLETED" && (
-                    <Badge>Overdue</Badge>
-                  )}
+                  {action.dueDate &&
+                    action.dueDate < now &&
+                    action.status !== "COMPLETED" && <Badge>Overdue</Badge>}
                   {action.dueDate && (
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-xs text-ink/70">
                       Due {action.dueDate.toLocaleDateString()}
                     </span>
                   )}
@@ -911,16 +1001,24 @@ export default async function AccountPlanPage({
                 </div>
               </div>
               {action.outcome && (
-                <p className="text-xs text-zinc-500">Outcome: {action.outcome}</p>
+                <p className="text-xs text-ink/70">Outcome: {action.outcome}</p>
               )}
 
               <details className="text-xs">
-                <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium ">
                   Edit
                 </summary>
-                <form action={updateAction} className="mt-2 flex flex-col gap-2">
+                <form
+                  action={updateAction}
+                  className="mt-2 flex flex-col gap-2"
+                >
                   <input type="hidden" name="actionId" value={action.id} />
-                  <TextField name="title" label="Title" defaultValue={action.title} required />
+                  <TextField
+                    name="title"
+                    label="Title"
+                    defaultValue={action.title}
+                    required
+                  />
                   <SelectField
                     name="owner"
                     label="Owner"
@@ -928,7 +1026,11 @@ export default async function AccountPlanPage({
                     options={accountTeamOptions}
                     required
                   />
-                  <DateField name="dueDate" label="Due date" defaultValue={action.dueDate} />
+                  <DateField
+                    name="dueDate"
+                    label="Due date"
+                    defaultValue={action.dueDate}
+                  />
                   <SelectField
                     name="priority"
                     label="Priority"
@@ -950,7 +1052,7 @@ export default async function AccountPlanPage({
                   />
                   <button
                     type="submit"
-                    className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                    className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                   >
                     Save
                   </button>
@@ -959,7 +1061,7 @@ export default async function AccountPlanPage({
             </li>
           ))}
           {visibleActions.length === 0 && (
-            <p className="text-sm text-zinc-500">No Actions in this view.</p>
+            <p className="text-sm text-ink/70">No Actions in this view.</p>
           )}
         </ul>
 
@@ -982,7 +1084,7 @@ export default async function AccountPlanPage({
             />
             <button
               type="submit"
-              className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+              className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
             >
               Create Action
             </button>
@@ -999,7 +1101,7 @@ export default async function AccountPlanPage({
               {account.assumptions.map((assumption) => (
                 <li
                   key={assumption.id}
-                  className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+                  className="flex flex-col gap-2 rounded-lg border border-border p-3 "
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span>{assumption.statement}</span>
@@ -1009,11 +1111,18 @@ export default async function AccountPlanPage({
                     </div>
                   </div>
                   <details className="text-xs">
-                    <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                    <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium ">
                       Edit
                     </summary>
-                    <form action={updateAssumption} className="mt-2 flex flex-col gap-2">
-                      <input type="hidden" name="assumptionId" value={assumption.id} />
+                    <form
+                      action={updateAssumption}
+                      className="mt-2 flex flex-col gap-2"
+                    >
+                      <input
+                        type="hidden"
+                        name="assumptionId"
+                        value={assumption.id}
+                      />
                       <TextAreaField
                         name="statement"
                         label="Statement"
@@ -1047,7 +1156,7 @@ export default async function AccountPlanPage({
                       />
                       <button
                         type="submit"
-                        className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                        className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                       >
                         Save
                       </button>
@@ -1056,7 +1165,7 @@ export default async function AccountPlanPage({
                 </li>
               ))}
               {account.assumptions.length === 0 && (
-                <p className="text-sm text-zinc-500">No Assumptions recorded.</p>
+                <p className="text-sm text-ink/70">No Assumptions recorded.</p>
               )}
             </ul>
 
@@ -1073,9 +1182,7 @@ export default async function AccountPlanPage({
                   />
                   <Field label="Status">
                     <input type="hidden" name="status" value="UNVALIDATED" />
-                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                      Unvalidated
-                    </span>
+                    <span className="text-sm text-ink">Unvalidated</span>
                   </Field>
                   <SelectField
                     name="validationOwner"
@@ -1085,7 +1192,7 @@ export default async function AccountPlanPage({
                   <DateField name="validationDate" label="Validation date" />
                   <button
                     type="submit"
-                    className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+                    className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
                   >
                     Create Assumption
                   </button>
@@ -1100,14 +1207,14 @@ export default async function AccountPlanPage({
               {knowledgeGaps.map((gap) => (
                 <li
                   key={gap.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 "
                 >
                   <span>{gap.question}</span>
                   <Badge>{gap.importance}</Badge>
                 </li>
               ))}
               {knowledgeGaps.length === 0 && (
-                <p className="text-sm text-zinc-500">No open Knowledge Gaps.</p>
+                <p className="text-sm text-ink/70">No open Knowledge Gaps.</p>
               )}
             </ul>
           </div>
@@ -1118,7 +1225,7 @@ export default async function AccountPlanPage({
               {account.risks.map((risk) => (
                 <li
                   key={risk.id}
-                  className="flex flex-col gap-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+                  className="flex flex-col gap-2 rounded-lg border border-border p-3 "
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span>{risk.description}</span>
@@ -1128,10 +1235,13 @@ export default async function AccountPlanPage({
                     </div>
                   </div>
                   <details className="text-xs">
-                    <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                    <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium ">
                       Edit
                     </summary>
-                    <form action={updateRisk} className="mt-2 flex flex-col gap-2">
+                    <form
+                      action={updateRisk}
+                      className="mt-2 flex flex-col gap-2"
+                    >
                       <input type="hidden" name="riskId" value={risk.id} />
                       <TextAreaField
                         name="description"
@@ -1172,7 +1282,7 @@ export default async function AccountPlanPage({
                       />
                       <button
                         type="submit"
-                        className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                        className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                       >
                         Save
                       </button>
@@ -1181,7 +1291,7 @@ export default async function AccountPlanPage({
                 </li>
               ))}
               {account.risks.length === 0 && (
-                <p className="text-sm text-zinc-500">No Risks recorded.</p>
+                <p className="text-sm text-ink/70">No Risks recorded.</p>
               )}
             </ul>
 
@@ -1189,14 +1299,23 @@ export default async function AccountPlanPage({
               <FormDisclosure label="+ New Risk">
                 <form action={createRisk} className="flex flex-col gap-3">
                   <input type="hidden" name="accountId" value={account.id} />
-                  <TextAreaField name="description" label="Description" required />
+                  <TextAreaField
+                    name="description"
+                    label="Description"
+                    required
+                  />
                   <SelectField
                     name="likelihood"
                     label="Likelihood"
                     options={RISK_LEVEL_OPTIONS}
                     required
                   />
-                  <SelectField name="impact" label="Impact" options={RISK_LEVEL_OPTIONS} required />
+                  <SelectField
+                    name="impact"
+                    label="Impact"
+                    options={RISK_LEVEL_OPTIONS}
+                    required
+                  />
                   <TextAreaField name="mitigation" label="Mitigation" />
                   <SelectField
                     name="owner"
@@ -1207,7 +1326,7 @@ export default async function AccountPlanPage({
                   <DateField name="reviewDate" label="Review date" />
                   <button
                     type="submit"
-                    className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+                    className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
                   >
                     Create Risk
                   </button>
@@ -1219,11 +1338,11 @@ export default async function AccountPlanPage({
       </Section>
 
       {/* 8. MATILDA change layer — account-plan.md §11. All five responses
-          (Accept & Link, Edit suggestion, Request more evidence, Defer to
-          Account Review, Dismiss) are implemented; rejecting the Insight
-          itself reuses the existing Customer Intelligence action. */}
+ (Accept & Link, Edit suggestion, Request more evidence, Defer to
+ Account Review, Dismiss) are implemented; rejecting the Insight
+ itself reuses the existing Customer Intelligence action. */}
       <Section title="MATILDA Changes">
-        <p className="mb-2 text-sm text-zinc-500">
+        <p className="mb-2 text-sm text-ink/70">
           {account.insights.length} change(s) may affect this plan
           {account.lastReviewedAt &&
             ` since it was last reviewed on ${account.lastReviewedAt.toLocaleDateString()}`}
@@ -1237,21 +1356,20 @@ export default async function AccountPlanPage({
             return (
               <li
                 key={insight.id}
-                className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+                className="rounded-lg border border-border p-4 "
               >
                 <p className="font-medium">{insight.title}</p>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  {insight.statement}
-                </p>
+                <p className="mt-1 text-sm text-ink/80">{insight.statement}</p>
                 {insight.soWhat && (
-                  <p className="mt-2 text-xs text-zinc-500">
+                  <p className="mt-2 text-xs text-ink/70">
                     Why this may affect the plan: {insight.soWhat}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-ink/70">
                   Evidence:{" "}
-                  {insight.sourceLinks.map((link) => link.source.title).join(", ") ||
-                    "none"}
+                  {insight.sourceLinks
+                    .map((link) => link.source.title)
+                    .join(", ") || "none"}
                 </p>
                 {requestedEvidence.length > 0 && (
                   <div className="mt-2 flex flex-col gap-1">
@@ -1260,7 +1378,8 @@ export default async function AccountPlanPage({
                         key={gap.id}
                         className="text-xs text-amber-700 dark:text-amber-400"
                       >
-                        Evidence requested: {gap.question} ({gap.status.toLowerCase()})
+                        Evidence requested: {gap.question} (
+                        {gap.status.toLowerCase()})
                       </p>
                     ))}
                   </div>
@@ -1279,13 +1398,16 @@ export default async function AccountPlanPage({
                   </div>
                 )}
 
-                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-900">
-                  <form action={linkInsightToPlan} className="flex items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3 ">
+                  <form
+                    action={linkInsightToPlan}
+                    className="flex items-center gap-2"
+                  >
                     <input type="hidden" name="insightId" value={insight.id} />
                     <select
                       name="target"
                       required
-                      className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+                      className="rounded border border-border bg-transparent px-2 py-1 text-xs text-ink-strong"
                     >
                       <option value="">Link to…</option>
                       <optgroup label="Goals">
@@ -1297,7 +1419,10 @@ export default async function AccountPlanPage({
                       </optgroup>
                       <optgroup label="Initiatives">
                         {initiatives.map((initiative) => (
-                          <option key={initiative.id} value={`INITIATIVE:${initiative.id}`}>
+                          <option
+                            key={initiative.id}
+                            value={`INITIATIVE:${initiative.id}`}
+                          >
                             {initiative.title}
                           </option>
                         ))}
@@ -1305,7 +1430,7 @@ export default async function AccountPlanPage({
                     </select>
                     <button
                       type="submit"
-                      className="rounded border border-zinc-300 px-2.5 py-1 text-xs font-medium dark:border-zinc-700"
+                      className="rounded border border-border px-2.5 py-1 text-xs font-medium "
                     >
                       Accept &amp; Link
                     </button>
@@ -1315,25 +1440,32 @@ export default async function AccountPlanPage({
                     <input type="hidden" name="insightId" value={insight.id} />
                     <button
                       type="submit"
-                      className="rounded border border-zinc-300 px-2.5 py-1 text-xs font-medium dark:border-zinc-700"
+                      className="rounded border border-border px-2.5 py-1 text-xs font-medium "
                     >
                       Dismiss — no plan change needed
                     </button>
                   </form>
 
                   <details className="text-xs">
-                    <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                    <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium ">
                       Edit suggestion
                     </summary>
-                    <form action={editSuggestion} className="mt-2 flex flex-col gap-2">
-                      <input type="hidden" name="insightId" value={insight.id} />
+                    <form
+                      action={editSuggestion}
+                      className="mt-2 flex flex-col gap-2"
+                    >
+                      <input
+                        type="hidden"
+                        name="insightId"
+                        value={insight.id}
+                      />
                       <label className="flex flex-col gap-1">
                         Statement
                         <textarea
                           name="statement"
                           defaultValue={insight.statement}
                           rows={2}
-                          className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                          className="w-full rounded border border-border bg-transparent p-2 text-xs "
                         />
                       </label>
                       <label className="flex flex-col gap-1">
@@ -1342,12 +1474,12 @@ export default async function AccountPlanPage({
                           name="soWhat"
                           defaultValue={insight.soWhat ?? ""}
                           rows={2}
-                          className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                          className="w-full rounded border border-border bg-transparent p-2 text-xs "
                         />
                       </label>
                       <button
                         type="submit"
-                        className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                        className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                       >
                         Save edit
                       </button>
@@ -1355,24 +1487,31 @@ export default async function AccountPlanPage({
                   </details>
 
                   <details className="text-xs">
-                    <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                    <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium ">
                       Request more evidence
                     </summary>
-                    <form action={requestMoreEvidence} className="mt-2 flex flex-col gap-2">
-                      <input type="hidden" name="insightId" value={insight.id} />
+                    <form
+                      action={requestMoreEvidence}
+                      className="mt-2 flex flex-col gap-2"
+                    >
+                      <input
+                        type="hidden"
+                        name="insightId"
+                        value={insight.id}
+                      />
                       <textarea
                         name="question"
                         defaultValue={`What additional evidence confirms: ${insight.title}?`}
                         rows={2}
-                        className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                        className="w-full rounded border border-border bg-transparent p-2 text-xs "
                       />
-                      <p className="text-zinc-500">
-                        Creates a Knowledge Gap tracking this; the change stays in this
-                        queue until it's answered.
+                      <p className="text-ink/70">
+                        Creates a Knowledge Gap tracking this; the change stays
+                        in this queue until it's answered.
                       </p>
                       <button
                         type="submit"
-                        className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                        className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                       >
                         Request evidence
                       </button>
@@ -1389,15 +1528,22 @@ export default async function AccountPlanPage({
                     if (availableReviews.length === 0) return null;
                     return (
                       <details className="text-xs">
-                        <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                        <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium ">
                           Defer to Account Review
                         </summary>
-                        <form action={deferToReview} className="mt-2 flex flex-col gap-2">
-                          <input type="hidden" name="insightId" value={insight.id} />
+                        <form
+                          action={deferToReview}
+                          className="mt-2 flex flex-col gap-2"
+                        >
+                          <input
+                            type="hidden"
+                            name="insightId"
+                            value={insight.id}
+                          />
                           <select
                             name="reviewId"
                             required
-                            className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+                            className="rounded border border-border bg-transparent px-2 py-1 text-xs text-ink-strong"
                           >
                             <option value="">Review…</option>
                             {availableReviews.map((review) => (
@@ -1407,13 +1553,13 @@ export default async function AccountPlanPage({
                               </option>
                             ))}
                           </select>
-                          <p className="text-zinc-500">
-                            The decision will be made at that Review instead of now; this
-                            change stays in the queue until then.
+                          <p className="text-ink/70">
+                            The decision will be made at that Review instead of
+                            now; this change stays in the queue until then.
                           </p>
                           <button
                             type="submit"
-                            className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                            className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                           >
                             Defer
                           </button>
@@ -1423,20 +1569,27 @@ export default async function AccountPlanPage({
                   })()}
 
                   <details className="text-xs">
-                    <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium text-red-700 dark:border-zinc-700 dark:text-red-400">
+                    <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium text-red-700 dark:text-red-400">
                       Reject Insight
                     </summary>
-                    <form action={rejectInsight} className="mt-2 flex flex-col gap-2">
-                      <input type="hidden" name="insightId" value={insight.id} />
+                    <form
+                      action={rejectInsight}
+                      className="mt-2 flex flex-col gap-2"
+                    >
+                      <input
+                        type="hidden"
+                        name="insightId"
+                        value={insight.id}
+                      />
                       <textarea
                         name="reason"
                         placeholder="Why reject this Insight entirely? (required)"
                         rows={2}
-                        className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                        className="w-full rounded border border-border bg-transparent p-2 text-xs "
                       />
                       <button
                         type="submit"
-                        className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                        className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                       >
                         Confirm reject
                       </button>
@@ -1447,7 +1600,7 @@ export default async function AccountPlanPage({
             );
           })}
           {account.insights.length === 0 && (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-ink/70">
               No changes are currently flagged as affecting this plan.
             </p>
           )}

@@ -52,8 +52,9 @@ export default async function CustomerIntelligenceSourcesPage() {
 
   if (!account) {
     return (
-      <p className="text-sm text-zinc-500">
-        No Account found. Run <code>npm run seed</code> to load the demo scenario.
+      <p className="text-sm text-ink/70">
+        No Account found. Run <code>npm run seed</code> to load the demo
+        scenario.
       </p>
     );
   }
@@ -63,28 +64,28 @@ export default async function CustomerIntelligenceSourcesPage() {
       <Tabs tabs={CI_TABS} active="/customer-intelligence/sources" />
 
       <details className="w-fit">
-        <summary className="cursor-pointer rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700">
+        <summary className="cursor-pointer rounded border border-border px-3 py-1.5 text-sm font-medium ">
           + Add Source
         </summary>
         <form
           action={addSource}
-          className="mt-3 flex max-w-md flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+          className="mt-3 flex max-w-md flex-col gap-3 rounded-lg border border-border p-4 "
         >
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          <label className="flex flex-col gap-1 text-xs text-ink/70">
             Title
             <input
               name="title"
               required
-              className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+              className="rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          <label className="flex flex-col gap-1 text-xs text-ink/70">
             Kind
             <select
               name="kind"
               defaultValue="NOTE"
-              className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+              className="rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong"
             >
               {Object.entries(KIND_LABEL).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -94,12 +95,12 @@ export default async function CustomerIntelligenceSourcesPage() {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          <label className="flex flex-col gap-1 text-xs text-ink/70">
             Category
             <select
               name="category"
               defaultValue="MEETING"
-              className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+              className="rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong"
             >
               {Object.entries(CATEGORY_LABEL).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -109,40 +110,40 @@ export default async function CustomerIntelligenceSourcesPage() {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          <label className="flex flex-col gap-1 text-xs text-ink/70">
             URL (if kind is URL)
             <input
               name="url"
-              className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+              className="rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          <label className="flex flex-col gap-1 text-xs text-ink/70">
             File name (if kind is Document — metadata only, no file is stored)
             <input
               name="fileName"
-              className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+              className="rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          <label className="flex flex-col gap-1 text-xs text-ink/70">
             Note text (if kind is Note)
             <textarea
               name="noteText"
               rows={3}
-              className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+              className="rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          <label className="flex flex-col gap-1 text-xs text-ink/70">
             Owner
             <input
               name="owner"
-              className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+              className="rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong"
             />
           </label>
 
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-ink/70">
             Automatic analysis is not built yet — this just saves the Source.
             MATILDA will not generate suggested Insights from it until that
             capability exists.
@@ -150,7 +151,7 @@ export default async function CustomerIntelligenceSourcesPage() {
 
           <button
             type="submit"
-            className="w-fit rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+            className="w-fit rounded border border-border px-3 py-1.5 text-sm font-medium "
           >
             Add Source
           </button>
@@ -162,7 +163,7 @@ export default async function CustomerIntelligenceSourcesPage() {
           {account.sources.map((source) => (
             <li
               key={source.id}
-              className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+              className="rounded-lg border border-border p-4 "
             >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge>{KIND_LABEL[source.kind]}</Badge>
@@ -176,22 +177,22 @@ export default async function CustomerIntelligenceSourcesPage() {
               </div>
               <p className="mt-2 font-medium">{source.title}</p>
               {source.summary && (
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  {source.summary}
-                </p>
+                <p className="mt-1 text-sm text-ink/80">{source.summary}</p>
               )}
-              <p className="mt-2 text-xs text-zinc-500">
+              <p className="mt-2 text-xs text-ink/70">
                 {[
                   source.sourceDate && source.sourceDate.toLocaleDateString(),
                   source.domainLinks.length > 0
-                    ? source.domainLinks.map((d) => DOMAIN_LABEL[d.domain]).join(", ")
+                    ? source.domainLinks
+                        .map((d) => DOMAIN_LABEL[d.domain])
+                        .join(", ")
                     : null,
                   source.owner && `Owner: ${source.owner}`,
                 ]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-ink/70">
                 {source.insightLinks.length} Insight(s) derived ·{" "}
                 {source.excerpts.length} excerpt(s)
               </p>

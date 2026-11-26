@@ -25,7 +25,11 @@ export default async function CustomerIntelligenceOverviewPage({
   const account = await prisma.account.findFirst({
     include: {
       insights: {
-        include: { goalLinks: true, initiativeLinks: true, opportunityLinks: true },
+        include: {
+          goalLinks: true,
+          initiativeLinks: true,
+          opportunityLinks: true,
+        },
       },
       knowledgeGaps: true,
       domainOverrides: true,
@@ -39,8 +43,9 @@ export default async function CustomerIntelligenceOverviewPage({
 
   if (!account) {
     return (
-      <p className="text-sm text-zinc-500">
-        No Account found. Run <code>npm run seed</code> to load the demo scenario.
+      <p className="text-sm text-ink/70">
+        No Account found. Run <code>npm run seed</code> to load the demo
+        scenario.
       </p>
     );
   }
@@ -71,18 +76,26 @@ export default async function CustomerIntelligenceOverviewPage({
     .slice(0, 5);
 
   const reviewQueue = account.insights.filter(
-    (i) => i.status === "NEEDS_VALIDATION" && i.originType === "MATILDA_SUGGESTION",
+    (i) =>
+      i.status === "NEEDS_VALIDATION" && i.originType === "MATILDA_SUGGESTION",
   );
 
   const topGaps = [...account.knowledgeGaps]
     .filter((g) => g.status === "OPEN" || g.status === "INVESTIGATING")
     .sort((a, b) => {
-      const rank: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+      const rank: Record<string, number> = {
+        CRITICAL: 0,
+        HIGH: 1,
+        MEDIUM: 2,
+        LOW: 3,
+      };
       return rank[a.importance] - rank[b.importance];
     })
     .slice(0, 3);
 
-  const planImpactInsights = account.insights.filter((i) => i.affectsAccountPlan);
+  const planImpactInsights = account.insights.filter(
+    (i) => i.affectsAccountPlan,
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -90,14 +103,14 @@ export default async function CustomerIntelligenceOverviewPage({
 
       <div className="flex items-center justify-between gap-3">
         {ranAgent ? (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">{ranAgent}</p>
+          <p className="text-sm text-ink/80">{ranAgent}</p>
         ) : (
           <span />
         )}
         <form action={runAgent}>
           <button
             type="submit"
-            className="rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+            className="rounded border border-border px-3 py-1.5 text-sm font-medium "
           >
             Run agent
           </button>
@@ -106,28 +119,28 @@ export default async function CustomerIntelligenceOverviewPage({
 
       <Section title="Intelligence Brief">
         {brief ? (
-          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="rounded-lg border border-border p-4 ">
             <div className="mb-2 flex items-center justify-between">
               <Badge>AI Inference</Badge>
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-ink/70">
                 Generated {brief.generatedAt.toLocaleDateString()}
               </span>
             </div>
-            <p className="text-zinc-700 dark:text-zinc-300">{brief.text}</p>
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="text-ink">{brief.text}</p>
+            <p className="mt-2 text-xs text-ink/70">
               Based on:{" "}
               {brief.insightLinks.map((link) => link.insight.title).join(", ")}
             </p>
             <button
               disabled
               title="Regenerating the brief is part of a later, interactive phase"
-              className="mt-3 rounded border border-zinc-300 px-2.5 py-1 text-xs text-zinc-400 dark:border-zinc-700"
+              className="mt-3 rounded border border-border px-2.5 py-1 text-xs text-ink/50 "
             >
               Regenerate (coming soon)
             </button>
           </div>
         ) : (
-          <p className="text-sm text-zinc-500">No brief generated yet.</p>
+          <p className="text-sm text-ink/70">No brief generated yet.</p>
         )}
       </Section>
 
@@ -135,7 +148,7 @@ export default async function CustomerIntelligenceOverviewPage({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-xs uppercase text-zinc-500 dark:border-zinc-800">
+              <tr className="border-b border-border text-xs uppercase text-ink/70 ">
                 <th className="py-2 pr-3">Domain</th>
                 <th className="py-2 pr-3">Status</th>
                 <th className="py-2 pr-3">Recent change</th>
@@ -147,7 +160,7 @@ export default async function CustomerIntelligenceOverviewPage({
               {domainRows.map((row) => (
                 <tr
                   key={row.domain}
-                  className="border-b border-zinc-100 last:border-0 dark:border-zinc-900"
+                  className="border-b border-border/40 last:border-0"
                 >
                   <td className="py-2 pr-3 font-medium">
                     {DOMAIN_LABEL[row.domain]}
@@ -156,7 +169,7 @@ export default async function CustomerIntelligenceOverviewPage({
                     <Badge>{STATUS_LABEL[row.status]}</Badge>
                     {row.override && (
                       <span
-                        className="ml-1 text-xs text-zinc-400"
+                        className="ml-1 text-xs text-ink/50"
                         title={row.override.statusOverrideReason}
                       >
                         (overridden)
@@ -172,8 +185,10 @@ export default async function CustomerIntelligenceOverviewPage({
                     {row.recentChanges}
                   </td>
                   <td className="py-2 pr-3">{row.openGaps}</td>
-                  <td className="py-2 text-zinc-500">
-                    {row.lastUpdated ? row.lastUpdated.toLocaleDateString() : "—"}
+                  <td className="py-2 text-ink/70">
+                    {row.lastUpdated
+                      ? row.lastUpdated.toLocaleDateString()
+                      : "—"}
                   </td>
                 </tr>
               ))}
@@ -187,11 +202,11 @@ export default async function CustomerIntelligenceOverviewPage({
           {recentImportantInsights.map((insight) => (
             <li
               key={insight.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 "
             >
               <div>
                 <p className="font-medium">{insight.title}</p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-ink/70">
                   {DOMAIN_LABEL[insight.domain]} ·{" "}
                   {insight.updatedAt.toLocaleDateString()}
                 </p>
@@ -200,18 +215,20 @@ export default async function CustomerIntelligenceOverviewPage({
             </li>
           ))}
           {recentImportantInsights.length === 0 && (
-            <p className="text-sm text-zinc-500">No significant recent changes.</p>
+            <p className="text-sm text-ink/70">
+              No significant recent changes.
+            </p>
           )}
         </ul>
       </Section>
 
       <Section title="Review Queue">
-        <p className="mb-2 text-sm text-zinc-500">
+        <p className="mb-2 text-sm text-ink/70">
           {reviewQueue.length} suggestion(s) awaiting review. Accept, Edit &amp;
           Accept, or Reject them on the{" "}
           <a
             href="/customer-intelligence/insights"
-            className="text-blue-600 hover:underline dark:text-blue-400"
+            className="text-brand-ink hover:underline"
           >
             Insights page
           </a>
@@ -221,12 +238,12 @@ export default async function CustomerIntelligenceOverviewPage({
           {reviewQueue.slice(0, 3).map((insight) => (
             <li
               key={insight.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 "
             >
               <div>
                 <p className="font-medium">{insight.title}</p>
                 {insight.rationale && (
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-ink/70">
                     Why MATILDA suggests this: {insight.rationale}
                   </p>
                 )}
@@ -242,7 +259,7 @@ export default async function CustomerIntelligenceOverviewPage({
           {topGaps.map((gap) => (
             <li
               key={gap.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 "
             >
               <span>{gap.question}</span>
               <div className="flex gap-2">
@@ -252,7 +269,7 @@ export default async function CustomerIntelligenceOverviewPage({
             </li>
           ))}
           {topGaps.length === 0 && (
-            <p className="text-sm text-zinc-500">No open Knowledge Gaps.</p>
+            <p className="text-sm text-ink/70">No open Knowledge Gaps.</p>
           )}
         </ul>
       </Section>
@@ -268,11 +285,11 @@ export default async function CustomerIntelligenceOverviewPage({
             return (
               <li
                 key={insight.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 "
               >
                 <div>
                   <p className="font-medium">{insight.title}</p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-ink/70">
                     {elements.length > 0
                       ? `Linked to: ${elements.join(", ")}`
                       : "Not yet linked to a plan element"}
@@ -280,7 +297,7 @@ export default async function CustomerIntelligenceOverviewPage({
                 </div>
                 <a
                   href="/account-plan"
-                  className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                  className="text-xs font-medium text-brand-ink hover:underline"
                 >
                   Open in Account Plan →
                 </a>
@@ -288,7 +305,7 @@ export default async function CustomerIntelligenceOverviewPage({
             );
           })}
           {planImpactInsights.length === 0 && (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-ink/70">
               No Insight is currently flagged as affecting the Account Plan.
             </p>
           )}

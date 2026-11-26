@@ -1,6 +1,11 @@
 // Small shared presentation helpers used across MATILDA screens.
 // Kept deliberately plain (no variants/props explosion) — add complexity
 // only when a second real need for it shows up.
+//
+// Colors reference the NOVA brand tokens defined in src/app/globals.css
+// (--color-ink, --color-border, --color-brand-ink, etc.). Those tokens
+// already swap values for dark mode, so components here don't need
+// separate dark: classes.
 
 import Link from "next/link";
 
@@ -12,7 +17,7 @@ export function Tabs({
   active: string;
 }) {
   return (
-    <nav className="flex gap-1 border-b border-zinc-200 dark:border-zinc-800">
+    <nav className="flex gap-1 border-b border-border">
       {tabs.map((tab) => (
         <Link
           key={tab.href}
@@ -20,8 +25,8 @@ export function Tabs({
           className={
             "px-3 py-2 text-sm font-medium " +
             (tab.href === active
-              ? "border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-              : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100")
+              ? "border-b-2 border-brand-ink text-brand-ink"
+              : "text-ink/70 hover:text-ink")
           }
         >
           {tab.label}
@@ -33,7 +38,7 @@ export function Tabs({
 
 export function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-zinc-300 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
+    <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-ink">
       {children}
     </span>
   );
@@ -48,7 +53,7 @@ export function Section({
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/70">
         {title}
       </h2>
       {children}
@@ -61,7 +66,7 @@ export function Section({
 // fields inside a <form action={serverAction}>, so no client JS is needed.
 
 const fieldClass =
-  "rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100";
+  "rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong";
 
 function toDateInputValue(value?: Date | null) {
   return value ? value.toISOString().slice(0, 10) : undefined;
@@ -75,7 +80,7 @@ export function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-zinc-500">
+    <label className="flex flex-col gap-1 text-xs text-ink/70">
       {label}
       {children}
     </label>
@@ -197,10 +202,10 @@ export function FormDisclosure({
 }) {
   return (
     <details className="w-fit">
-      <summary className="cursor-pointer rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700">
+      <summary className="cursor-pointer rounded border border-border px-3 py-1.5 text-sm font-medium text-ink-strong">
         {label}
       </summary>
-      <div className="mt-3 flex max-w-md flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="mt-3 flex max-w-md flex-col gap-3 rounded-lg border border-border p-4">
         {children}
       </div>
     </details>

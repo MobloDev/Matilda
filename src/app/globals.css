@@ -1,26 +1,79 @@
 @import "tailwindcss";
 
+/* NOVA brand palette, extracted from the client's own PowerPoint theme
+   ("NOVA" in ppt/theme/theme1.xml): dk2 #575756, lt2 #F3F3F3, accent1
+   #75E6DA (also the deck's hyperlink color), accent2 #5C7A89, accent3
+   #7C9893, accent4 #A49E91.
+
+   #75E6DA is too light to use as text on white (fails WCAG AA), so
+   "brand" (light, decorative — fills, underlines, badges) and
+   "brand-ink" (dark, same hue family — links, active states, text) are
+   split into two tokens. Amber and red are kept as universal semantic
+   colors (demo-data notice; destructive/overdue) rather than mapped onto
+   the brand palette — overriding them would make warnings less legible. */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+
+  --color-ink: #575756;
+  --color-ink-strong: #000000;
+  --color-neutral-light: #f3f3f3;
+  --color-border: #d9d9d8;
+
+  --color-brand: #75e6da;
+  --color-brand-ink: #0f766e;
+  --color-brand-tint: #e3f8f6;
+
+  --color-secondary: #5c7a89;
+  --color-tertiary: #7c9893;
+  --color-quaternary: #a49e91;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-ink: var(--color-ink);
+  --color-ink-strong: var(--color-ink-strong);
+  --color-neutral-light: var(--color-neutral-light);
+  --color-border: var(--color-border);
+
+  --color-brand: var(--color-brand);
+  --color-brand-ink: var(--color-brand-ink);
+  --color-brand-tint: var(--color-brand-tint);
+
+  --color-secondary: var(--color-secondary);
+  --color-tertiary: var(--color-tertiary);
+  --color-quaternary: var(--color-quaternary);
+
+  /* "Calibri" first so anyone with Office installed sees NOVA's real
+     brand font; --font-lato (next/font/google, layout.tsx) is the open
+     substitute everyone else gets. */
+  --font-sans: "Calibri", var(--font-lato), system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1a1a1a;
+    --foreground: #f3f3f3;
+
+    --color-ink: #c9c9c8;
+    --color-ink-strong: #ffffff;
+    --color-neutral-light: #242423;
+    --color-border: #3a3a39;
+
+    --color-brand: #8feee3;
+    --color-brand-ink: #5eead4;
+    --color-brand-tint: #123733;
+
+    --color-secondary: #8ba6b4;
+    --color-tertiary: #a3bdb8;
+    --color-quaternary: #beb8ab;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }

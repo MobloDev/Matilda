@@ -32,12 +32,12 @@ function FilterSelect({
   options: { value: string; label: string }[];
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-zinc-500">
+    <label className="flex flex-col gap-1 text-xs text-ink/70">
       {label}
       <select
         name={name}
         defaultValue={value}
-        className="rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+        className="rounded border border-border bg-transparent px-2 py-1 text-sm text-ink-strong"
       >
         <option value="">All</option>
         {options.map((option) => (
@@ -80,8 +80,9 @@ export default async function CustomerIntelligenceInsightsPage({
 
   if (!account) {
     return (
-      <p className="text-sm text-zinc-500">
-        No Account found. Run <code>npm run seed</code> to load the demo scenario.
+      <p className="text-sm text-ink/70">
+        No Account found. Run <code>npm run seed</code> to load the demo
+        scenario.
       </p>
     );
   }
@@ -106,10 +107,12 @@ export default async function CustomerIntelligenceInsightsPage({
           name="type"
           label="Type"
           value={type}
-          options={Object.entries(INFORMATION_TYPE_LABEL).map(([value, label]) => ({
-            value,
-            label,
-          }))}
+          options={Object.entries(INFORMATION_TYPE_LABEL).map(
+            ([value, label]) => ({
+              value,
+              label,
+            }),
+          )}
         />
         <FilterSelect
           name="status"
@@ -140,13 +143,13 @@ export default async function CustomerIntelligenceInsightsPage({
         />
         <button
           type="submit"
-          className="self-end rounded border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700"
+          className="self-end rounded border border-border px-3 py-1 text-sm "
         >
           Apply
         </button>
         <a
           href="/customer-intelligence/insights"
-          className="self-end text-sm text-zinc-500 hover:underline"
+          className="self-end text-sm text-ink/70 hover:underline"
         >
           Clear
         </a>
@@ -158,84 +161,100 @@ export default async function CustomerIntelligenceInsightsPage({
             {group.insights.map((insight) => (
               <li
                 key={insight.id}
-                className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+                className="rounded-lg border border-border p-4 "
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge>{INFORMATION_TYPE_LABEL[insight.informationType]}</Badge>
+                  <Badge>
+                    {INFORMATION_TYPE_LABEL[insight.informationType]}
+                  </Badge>
                   <Badge>{STATUS_LABEL[insight.status]}</Badge>
                   <Badge>{insight.importance}</Badge>
                   <Badge>{insight.confidence} confidence</Badge>
                   {insight.originType === "MATILDA_SUGGESTION" && (
                     <Badge>Suggested by MATILDA</Badge>
                   )}
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs text-ink/70">
                     {insight.observedAt.toLocaleDateString()}
                   </span>
                 </div>
                 <p className="mt-2 font-medium">{insight.title}</p>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  {insight.statement}
-                </p>
+                <p className="mt-1 text-sm text-ink/80">{insight.statement}</p>
                 {insight.soWhat && (
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-ink/70">
                     So what for NOVA: {insight.soWhat}
                   </p>
                 )}
-                <p className="mt-2 text-xs text-zinc-500">
+                <p className="mt-2 text-xs text-ink/70">
                   {insight.sourceLinks.length} source(s):{" "}
-                  {insight.sourceLinks.map((link) => link.source.title).join(", ") ||
-                    "none"}
+                  {insight.sourceLinks
+                    .map((link) => link.source.title)
+                    .join(", ") || "none"}
                 </p>
                 {insight.status === "NEEDS_VALIDATION" && (
-                  <div className="mt-3 flex flex-col gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-900">
+                  <div className="mt-3 flex flex-col gap-2 border-t border-border/40 pt-3 ">
                     <div className="flex flex-wrap items-center gap-2">
                       <form action={acceptInsight}>
-                        <input type="hidden" name="insightId" value={insight.id} />
+                        <input
+                          type="hidden"
+                          name="insightId"
+                          value={insight.id}
+                        />
                         <button
                           type="submit"
-                          className="rounded border border-zinc-300 px-2.5 py-1 text-xs font-medium dark:border-zinc-700"
+                          className="rounded border border-border px-2.5 py-1 text-xs font-medium "
                         >
                           Accept
                         </button>
                       </form>
                       <details className="text-xs">
-                        <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700">
+                        <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium ">
                           Edit &amp; Accept
                         </summary>
                         <form
                           action={editAndAcceptInsight}
                           className="mt-2 flex flex-col gap-2"
                         >
-                          <input type="hidden" name="insightId" value={insight.id} />
+                          <input
+                            type="hidden"
+                            name="insightId"
+                            value={insight.id}
+                          />
                           <textarea
                             name="statement"
                             defaultValue={insight.statement}
                             rows={2}
-                            className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                            className="w-full rounded border border-border bg-transparent p-2 text-xs "
                           />
                           <button
                             type="submit"
-                            className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                            className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                           >
                             Save &amp; Accept
                           </button>
                         </form>
                       </details>
                       <details className="text-xs">
-                        <summary className="cursor-pointer rounded border border-zinc-300 px-2.5 py-1 font-medium text-red-700 dark:border-zinc-700 dark:text-red-400">
+                        <summary className="cursor-pointer rounded border border-border px-2.5 py-1 font-medium text-red-700 dark:text-red-400">
                           Reject
                         </summary>
-                        <form action={rejectInsight} className="mt-2 flex flex-col gap-2">
-                          <input type="hidden" name="insightId" value={insight.id} />
+                        <form
+                          action={rejectInsight}
+                          className="mt-2 flex flex-col gap-2"
+                        >
+                          <input
+                            type="hidden"
+                            name="insightId"
+                            value={insight.id}
+                          />
                           <textarea
                             name="reason"
                             placeholder="Why reject this suggestion? (required)"
                             rows={2}
-                            className="w-full rounded border border-zinc-300 bg-transparent p-2 text-xs dark:border-zinc-700"
+                            className="w-full rounded border border-border bg-transparent p-2 text-xs "
                           />
                           <button
                             type="submit"
-                            className="w-fit rounded border border-zinc-300 px-2.5 py-1 font-medium dark:border-zinc-700"
+                            className="w-fit rounded border border-border px-2.5 py-1 font-medium "
                           >
                             Confirm reject
                           </button>
@@ -250,7 +269,7 @@ export default async function CustomerIntelligenceInsightsPage({
         </Section>
       ))}
       {grouped.length === 0 && (
-        <p className="text-sm text-zinc-500">No Insights match these filters.</p>
+        <p className="text-sm text-ink/70">No Insights match these filters.</p>
       )}
     </div>
   );

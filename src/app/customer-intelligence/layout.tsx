@@ -11,7 +11,7 @@ export default function CustomerIntelligenceLayout({
       <div className="flex flex-col gap-2">
         <Link
           href="/"
-          className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          className="text-sm font-medium text-brand-ink hover:underline"
         >
           ← Back to Account Overview
         </Link>

@@ -43,8 +43,9 @@ export default async function CustomerIntelligenceKnowledgeGapsPage() {
 
   if (!account) {
     return (
-      <p className="text-sm text-zinc-500">
-        No Account found. Run <code>npm run seed</code> to load the demo scenario.
+      <p className="text-sm text-ink/70">
+        No Account found. Run <code>npm run seed</code> to load the demo
+        scenario.
       </p>
     );
   }
@@ -66,8 +67,8 @@ export default async function CustomerIntelligenceKnowledgeGapsPage() {
 
       {highImportanceWithoutOwner.length > 0 && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-          {highImportanceWithoutOwner.length} high-importance Knowledge Gap(s) have
-          no owner.
+          {highImportanceWithoutOwner.length} high-importance Knowledge Gap(s)
+          have no owner.
         </div>
       )}
 
@@ -76,49 +77,50 @@ export default async function CustomerIntelligenceKnowledgeGapsPage() {
           {gaps.map((gap) => {
             const relatedTo = [
               ...gap.goalLinks.map((l) => `Goal: ${l.goal.title}`),
-              ...gap.initiativeLinks.map((l) => `Initiative: ${l.initiative.title}`),
+              ...gap.initiativeLinks.map(
+                (l) => `Initiative: ${l.initiative.title}`,
+              ),
               ...gap.relationshipLinks.map(
                 (l) => `Relationship: ${l.relationship.contactName}`,
               ),
-              ...gap.opportunityLinks.map((l) => `Opportunity: ${l.opportunity.title}`),
+              ...gap.opportunityLinks.map(
+                (l) => `Opportunity: ${l.opportunity.title}`,
+              ),
               ...gap.reviewLinks.map(
                 (l) => `Review: ${l.review.reviewDate.toLocaleDateString()}`,
               ),
               ...gap.actionLinks.map((l) => `Action: ${l.action.title}`),
             ];
             return (
-              <li
-                key={gap.id}
-                className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-              >
+              <li key={gap.id} className="rounded-lg border border-border p-4 ">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge>{DOMAIN_LABEL[gap.domain]}</Badge>
                   <Badge>{gap.importance}</Badge>
                   <Badge>{STATUS_LABEL[gap.status]}</Badge>
                   <Badge>{CREATION_TYPE_LABEL[gap.creationType]}</Badge>
-                  {gap.creationType === "MATILDA_SUGGESTED" && !gap.accepted && (
-                    <Badge>Awaiting acceptance</Badge>
-                  )}
+                  {gap.creationType === "MATILDA_SUGGESTED" &&
+                    !gap.accepted && <Badge>Awaiting acceptance</Badge>}
                   {!gap.owner &&
-                    (gap.importance === "HIGH" || gap.importance === "CRITICAL") && (
+                    (gap.importance === "HIGH" ||
+                      gap.importance === "CRITICAL") && (
                       <Badge>⚠ No owner</Badge>
                     )}
                 </div>
                 <p className="mt-2 font-medium">{gap.question}</p>
                 {gap.whyItMatters && (
-                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                    {gap.whyItMatters}
-                  </p>
+                  <p className="mt-1 text-sm text-ink/80">{gap.whyItMatters}</p>
                 )}
-                <p className="mt-2 text-xs text-zinc-500">
+                <p className="mt-2 text-xs text-ink/70">
                   {gap.owner ? `Owner: ${gap.owner}` : "No owner assigned"}
-                  {gap.targetDate && ` · Due ${gap.targetDate.toLocaleDateString()}`}
-                  {gap.relatedInsight && ` · About: ${gap.relatedInsight.title}`}
+                  {gap.targetDate &&
+                    ` · Due ${gap.targetDate.toLocaleDateString()}`}
+                  {gap.relatedInsight &&
+                    ` · About: ${gap.relatedInsight.title}`}
                   {gap.answeredByInsight &&
                     ` · Answered by: ${gap.answeredByInsight.title}`}
                 </p>
                 {relatedTo.length > 0 && (
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-ink/70">
                     Related to: {relatedTo.join(", ")}
                   </p>
                 )}
