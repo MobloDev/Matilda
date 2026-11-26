@@ -62,8 +62,17 @@ enum RelationshipStrength {
 enum GoalStatus {
   PROPOSED
   ACTIVE
+  AT_RISK
   ACHIEVED
   STOPPED
+}
+
+// Status of the Account Plan itself (account-plan.md §4), not any single Goal.
+enum PlanStatus {
+  DRAFT
+  ACTIVE
+  NEEDS_REVIEW
+  RETIRED
 }
 
 enum InitiativeStatus {
@@ -252,8 +261,8 @@ enum DomainStatus {
 // --- Core entities (docs/data-model.md sections 8-20) ---
 
 model Account {
-  id                      String    @id @default(uuid())
-  name                    String    @unique
+  id                      String     @id @default(uuid())
+  name                    String     @unique
   accountType             String?
   segment                 String?
   industry                String?
@@ -261,10 +270,13 @@ model Account {
   technicalAccountManager String?
   accountTeam             String? // comma-separated names for the prototype; a real contact list is out of scope
   ambition                String?
+  timeHorizon             String? // free text, e.g. "12-36 months" (account-plan.md §4)
+  planStatus              PlanStatus @default(DRAFT)
+  reviewDueAt             DateTime?
   strategicStatus         String?
   lastReviewedAt          DateTime?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
 
   insights        Insight[]
   sources         Source[]

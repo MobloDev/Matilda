@@ -57,6 +57,9 @@ async function main() {
       accountTeam: "Astrid Lindqvist, Jonas Berg, Maya Olsen",
       ambition:
         "Become the trusted partner for Nordic Horizon Group's digital development agenda.",
+      timeHorizon: "12-24 months",
+      planStatus: "ACTIVE",
+      reviewDueAt: new Date("2027-02-26"),
       strategicStatus: "Developing",
     },
   });

@@ -55,3 +55,154 @@ export function Section({
     </section>
   );
 }
+
+// --- Form field helpers, used by every Account Plan authoring form. Kept
+// plain (no react-hook-form, no client components) — these are uncontrolled
+// fields inside a <form action={serverAction}>, so no client JS is needed.
+
+const fieldClass =
+  "rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100";
+
+function toDateInputValue(value?: Date | null) {
+  return value ? value.toISOString().slice(0, 10) : undefined;
+}
+
+export function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-xs text-zinc-500">
+      {label}
+      {children}
+    </label>
+  );
+}
+
+export function TextField({
+  name,
+  label,
+  defaultValue,
+  required,
+  placeholder,
+}: {
+  name: string;
+  label: string;
+  defaultValue?: string | null;
+  required?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <Field label={label}>
+      <input
+        name={name}
+        defaultValue={defaultValue ?? ""}
+        required={required}
+        placeholder={placeholder}
+        className={fieldClass}
+      />
+    </Field>
+  );
+}
+
+export function TextAreaField({
+  name,
+  label,
+  defaultValue,
+  required,
+  rows = 2,
+}: {
+  name: string;
+  label: string;
+  defaultValue?: string | null;
+  required?: boolean;
+  rows?: number;
+}) {
+  return (
+    <Field label={label}>
+      <textarea
+        name={name}
+        defaultValue={defaultValue ?? ""}
+        required={required}
+        rows={rows}
+        className={fieldClass}
+      />
+    </Field>
+  );
+}
+
+export function DateField({
+  name,
+  label,
+  defaultValue,
+}: {
+  name: string;
+  label: string;
+  defaultValue?: Date | null;
+}) {
+  return (
+    <Field label={label}>
+      <input
+        type="date"
+        name={name}
+        defaultValue={toDateInputValue(defaultValue)}
+        className={fieldClass}
+      />
+    </Field>
+  );
+}
+
+export function SelectField({
+  name,
+  label,
+  defaultValue,
+  options,
+  required,
+}: {
+  name: string;
+  label: string;
+  defaultValue?: string | null;
+  options: { value: string; label: string }[];
+  required?: boolean;
+}) {
+  return (
+    <Field label={label}>
+      <select
+        name={name}
+        defaultValue={defaultValue ?? ""}
+        required={required}
+        className={fieldClass}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}
+
+// A form wrapped in <details>, used for every "+ New X" / "Edit" control —
+// collapsed by default so the page isn't overwhelmed with open forms.
+export function FormDisclosure({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <details className="w-fit">
+      <summary className="cursor-pointer rounded border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700">
+        {label}
+      </summary>
+      <div className="mt-3 flex max-w-md flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        {children}
+      </div>
+    </details>
+  );
+}

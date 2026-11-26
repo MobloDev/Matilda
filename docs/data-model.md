@@ -183,6 +183,7 @@ for different follow-up, so one combined `resolved` value was not precise enough
 
 - `proposed`
 - `active`
+- `at_risk`
 - `achieved`
 - `stopped`
 
@@ -340,9 +341,19 @@ Represents the customer organisation and root of the living model.
 | `technical_account_manager` | user reference | No | When relevant |
 | `account_team` | user-reference list | No | Contributors |
 | `ambition` | text | No | NOVA's overall ambition for the Account |
+| `time_horizon` | string | No | Free text, e.g. "12-36 months" (account-plan.md §4) |
+| `plan_status` | enum | Yes | Status of the Account Plan itself — not any single Goal. Default `draft` |
+| `review_due_at` | datetime | No | Target date for the next Account Plan review |
 | `strategic_status` | string/enum | No | Keep initial values simple |
 | `last_reviewed_at` | datetime | No | Last Account-level review |
 | common audit fields | — | Yes | As above |
+
+### `plan_status`
+
+- `draft`
+- `active`
+- `needs_review`
+- `retired`
 
 ### Rules
 
