@@ -152,6 +152,93 @@ enum SourceSupportType {
   CONTEXT
 }
 
+// --- Customer Intelligence enums (docs/customer-intelligence.md §7.2) ---
+
+// Replaces free-text `topic` on Insight and KnowledgeGap.
+enum IntelligenceDomain {
+  COMPANY_BUSINESS
+  STRATEGY_PRIORITIES
+  ORGANISATION_LEADERSHIP
+  TECHNOLOGY_DIGITAL
+  NEWS_CHANGES
+  NOVA_CUSTOMER
+}
+
+enum SourceKind {
+  DOCUMENT
+  URL
+  NOTE
+}
+
+enum SourceCategory {
+  // external
+  WEBSITE
+  ANNUAL_REPORT
+  PRESS_RELEASE
+  NEWS_ARTICLE
+  INVESTOR_PRESENTATION
+  PARTNER_CASE
+  JOB_POSTING
+  PUBLIC_REPORT
+  // internal NOVA
+  SHAREPOINT_DOCUMENT
+  TEAMS_CONVERSATION
+  PROPOSAL
+  PROJECT_REPORT
+  ACCOUNT_PLAN
+  CRM_RECORD
+  // direct contact
+  MEETING
+  MEETING_TRANSCRIPT
+  EMAIL
+  WORKSHOP
+  USER_OBSERVATION
+}
+
+enum SourceVisibility {
+  PUBLIC
+  INTERNAL
+}
+
+enum SourceStatus {
+  PENDING
+  ANALYSING
+  ANALYSED
+  MONITORED
+  FAILED
+  ARCHIVED
+}
+
+// Only set on agent-originated Insights or Knowledge Gaps.
+enum SuggestionKind {
+  NEW
+  UPDATE
+  CONTRADICTION
+}
+
+enum AgentJob {
+  ANALYSE_SOURCE
+  MONITOR
+  DETECT_CHANGE
+  SUGGEST_GAPS
+  WRITE_BRIEF
+}
+
+enum AgentRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// Computed on read from Insights/Gaps, not normally stored — see
+// AccountDomainOverride for the one piece that IS persisted (a human override).
+enum DomainStatus {
+  STRONG
+  PARTIAL
+  LIMITED
+  STALE
+}
+
 // --- Core entities (docs/data-model.md sections 8-20) ---
 
 model Account {
@@ -169,29 +256,32 @@ model Account {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  insights      Insight[]
-  sources       Source[]
-  knowledgeGaps KnowledgeGap[]
-  relationships Relationship[]
-  goals         Goal[]
-  initiatives   Initiative[]
-  actions       Action[]
-  opportunities Opportunity[]
-  reviews       AccountReview[]
-  assumptions   Assumption[]
-  risks         Risk[]
-  growthAreas   GrowthArea[]
+  insights        Insight[]
+  sources         Source[]
+  knowledgeGaps   KnowledgeGap[]
+  relationships   Relationship[]
+  goals           Goal[]
+  initiatives     Initiative[]
+  actions         Action[]
+  opportunities   Opportunity[]
+  reviews         AccountReview[]
+  assumptions     Assumption[]
+  risks           Risk[]
+  growthAreas     GrowthArea[]
+  agentRuns       AgentRun[]
+  briefs          IntelligenceBrief[]
+  domainOverrides AccountDomainOverride[]
 }
 
 model Insight {
-  id                  String          @id @default(uuid())
+  id                  String             @id @default(uuid())
   accountId           String
-  account             Account         @relation(fields: [accountId], references: [id])
+  account             Account            @relation(fields: [accountId], references: [id])
   title               String
   statement           String
-  topic               String
+  domain              IntelligenceDomain
   informationType     InformationType
-  status              InsightStatus   @default(NEEDS_VALIDATION)
+  status              InsightStatus      @default(NEEDS_VALIDATION)
   importance          ImportanceLevel
   confidence          ConfidenceLevel
   observedAt          DateTime
@@ -202,6 +292,19 @@ model Insight {
   reviewDueAt         DateTime?
   supersedesInsightId String?
 
+  // Customer Intelligence agent fields (docs/customer-intelligence.md §7.3) — only
+  // set on agent-originated Insights.
+  relatedInsightId String?
+  suggestionKind   SuggestionKind?
+  rationale        String?
+  soWhat           String?
+  agentRunId       String?
+  agentRun         AgentRun?       @relation(fields: [agentRunId], references: [id])
+
+  // Flags the Insight for Account Plan attention even before a formal
+  // Goal/Initiative/Opportunity link exists.
+  affectsAccountPlan Boolean @default(false)
+
   originType  OriginType @default(HUMAN)
   aiGenerated Boolean    @default(false)
   createdAt   DateTime   @default(now())
@@ -209,25 +312,64 @@ model Insight {
   updatedAt   DateTime   @updatedAt
 
   sourceLinks           InsightSource[]
-  relatedKnowledgeGaps  KnowledgeGap[]       @relation("GapRelatesTo")
-  answeredKnowledgeGaps KnowledgeGap[]       @relation("GapAnsweredBy")
+  relatedKnowledgeGaps  KnowledgeGap[]             @relation("GapRelatesTo")
+  answeredKnowledgeGaps KnowledgeGap[]             @relation("GapAnsweredBy")
   goalLinks             GoalInsight[]
   initiativeLinks       InitiativeInsight[]
   opportunityLinks      OpportunityInsight[]
+  briefLinks            IntelligenceBriefInsight[]
 }
 
 model Source {
-  id             String   @id @default(uuid())
-  accountId      String
-  account        Account  @relation(fields: [accountId], references: [id])
-  sourceType     String
-  title          String
-  reference      String?
-  sourceDate     DateTime
-  owner          String?
-  classification String?
-  excerpt        String?
-  createdAt      DateTime @default(now())
+  id           String           @id @default(uuid())
+  accountId    String
+  account      Account          @relation(fields: [accountId], references: [id])
+  title        String
+  kind         SourceKind
+  category     SourceCategory
+  visibility   SourceVisibility
+  reliability  ConfidenceLevel
+  url          String? // kind = URL
+  fileName     String? // kind = DOCUMENT — metadata only, no file is stored
+  fileType     String? // kind = DOCUMENT
+  noteText     String? // kind = NOTE
+  participants String? // comma-separated, for notes/meetings
+  sourceDate   DateTime?
+  owner        String?
+
+  originType    OriginType   @default(HUMAN)
+  monitor       Boolean      @default(false)
+  lastCheckedAt DateTime?
+  status        SourceStatus @default(ANALYSED)
+  summary       String?
+  agentRunId    String?
+  agentRun      AgentRun?    @relation(fields: [agentRunId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  insightLinks InsightSource[]
+  domainLinks  SourceDomain[]
+  excerpts     SourceExcerpt[]
+}
+
+// Many-to-many: which Intelligence Domains a Source touches (data-model.md
+// "Source-Domain link").
+model SourceDomain {
+  sourceId String
+  source   Source             @relation(fields: [sourceId], references: [id])
+  domain   IntelligenceDomain
+
+  @@id([sourceId, domain])
+}
+
+// A short quote or extracted passage backing a specific Insight (data-model.md
+// "Source Excerpt").
+model SourceExcerpt {
+  id       String  @id @default(uuid())
+  sourceId String
+  source   Source  @relation(fields: [sourceId], references: [id])
+  text     String
+  location String?
 
   insightLinks InsightSource[]
 }
@@ -238,6 +380,8 @@ model InsightSource {
   insight     Insight           @relation(fields: [insightId], references: [id])
   sourceId    String
   source      Source            @relation(fields: [sourceId], references: [id])
+  excerptId   String?
+  excerpt     SourceExcerpt?    @relation(fields: [excerptId], references: [id])
   supportType SourceSupportType
   note        String?
 
@@ -245,18 +389,21 @@ model InsightSource {
 }
 
 model KnowledgeGap {
-  id         String             @id @default(uuid())
-  accountId  String
-  account    Account            @relation(fields: [accountId], references: [id])
-  question   String
-  topic      String
-  importance ImportanceLevel
-  status     KnowledgeGapStatus @default(OPEN)
-  owner      String?
-  targetDate DateTime?
-  resolution String?
-  resolvedAt DateTime?
-  resolvedBy String?
+  id           String             @id @default(uuid())
+  accountId    String
+  account      Account            @relation(fields: [accountId], references: [id])
+  question     String
+  domain       IntelligenceDomain
+  whyItMatters String?
+  importance   ImportanceLevel
+  status       KnowledgeGapStatus @default(OPEN)
+  originType   OriginType         @default(HUMAN)
+  accepted     Boolean            @default(true)
+  owner        String?
+  targetDate   DateTime?
+  resolution   String?
+  resolvedAt   DateTime?
+  resolvedBy   String?
 
   // Optional link to the Insight this gap is about, if any (data-model.md "Links").
   relatedInsightId String?
@@ -529,4 +676,59 @@ model AccountReview {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   actions   Action[]
+}
+
+// Records one execution of the (mocked, for the prototype) Customer Intelligence
+// agent (docs/customer-intelligence.md §6 / data-model.md "Agent Run").
+model AgentRun {
+  id                String         @id @default(uuid())
+  accountId         String
+  account           Account        @relation(fields: [accountId], references: [id])
+  job               AgentJob
+  startedAt         DateTime       @default(now())
+  finishedAt        DateTime?
+  status            AgentRunStatus @default(RUNNING)
+  sourcesCreated    Int            @default(0)
+  insightsSuggested Int            @default(0)
+  gapsSuggested     Int            @default(0)
+
+  sources  Source[]
+  insights Insight[]
+}
+
+// The short AI-generated summary on the Customer Intelligence Overview
+// (data-model.md "Intelligence Brief"). Filled from a template over current
+// Insights for the prototype — never a live model call.
+model IntelligenceBrief {
+  id          String   @id @default(uuid())
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id])
+  text        String
+  generatedAt DateTime @default(now())
+
+  insightLinks IntelligenceBriefInsight[]
+}
+
+model IntelligenceBriefInsight {
+  briefId   String
+  brief     IntelligenceBrief @relation(fields: [briefId], references: [id])
+  insightId String
+  insight   Insight           @relation(fields: [insightId], references: [id])
+
+  @@id([briefId, insightId])
+}
+
+// A human's explicit override of a domain's computed status (data-model.md
+// "Account Domain Override"). The computed status itself is never stored.
+model AccountDomainOverride {
+  accountId            String
+  account              Account            @relation(fields: [accountId], references: [id])
+  domain               IntelligenceDomain
+  statusOverride       DomainStatus
+  statusOverrideReason String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([accountId, domain])
 }

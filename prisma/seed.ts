@@ -27,9 +27,15 @@ async function main() {
   await prisma.goal.deleteMany();
   await prisma.knowledgeGap.deleteMany();
   await prisma.relationship.deleteMany();
+  await prisma.intelligenceBriefInsight.deleteMany();
+  await prisma.intelligenceBrief.deleteMany();
+  await prisma.accountDomainOverride.deleteMany();
   await prisma.insightSource.deleteMany();
+  await prisma.sourceExcerpt.deleteMany();
+  await prisma.sourceDomain.deleteMany();
   await prisma.insight.deleteMany();
   await prisma.source.deleteMany();
+  await prisma.agentRun.deleteMany();
   await prisma.accountReview.deleteMany();
   await prisma.account.deleteMany();
 
@@ -53,40 +59,122 @@ async function main() {
   const strategySource = await prisma.source.create({
     data: {
       accountId: account.id,
-      sourceType: "strategy_document",
+      kind: "DOCUMENT",
+      category: "PUBLIC_REPORT",
+      visibility: "PUBLIC",
+      reliability: "HIGH",
       title: "Nordic Horizon Group 2026 digital ambition statement",
+      fileName: "nordic-horizon-2026-digital-ambition.pdf",
+      fileType: "pdf",
       sourceDate: new Date("2026-09-01"),
       owner: "Astrid Lindqvist",
-      classification: "external",
-      excerpt:
+      status: "ANALYSED",
+      summary:
         "The group wants more integrated digital customer experiences across business units.",
+    },
+  });
+
+  await prisma.sourceDomain.createMany({
+    data: [
+      { sourceId: strategySource.id, domain: "STRATEGY_PRIORITIES" },
+      { sourceId: strategySource.id, domain: "COMPANY_BUSINESS" },
+    ],
+  });
+
+  const strategyExcerpt = await prisma.sourceExcerpt.create({
+    data: {
+      sourceId: strategySource.id,
+      text: "The group wants more integrated digital customer experiences across business units.",
+      location: "p. 3",
     },
   });
 
   const meetingSource = await prisma.source.create({
     data: {
       accountId: account.id,
-      sourceType: "customer_meeting",
+      kind: "NOTE",
+      category: "MEETING",
+      visibility: "INTERNAL",
+      reliability: "MEDIUM",
       title: "Quarterly check-in with Digital Platform team",
+      noteText:
+        "Customer indicated they may be considering a shared Nordic data platform.",
+      participants: "Maya Olsen, Erik Solberg",
       sourceDate: new Date("2026-11-18"),
       owner: "Maya Olsen",
-      classification: "external",
-      excerpt:
+      status: "ANALYSED",
+      summary:
         "Customer indicated they may be considering a shared Nordic data platform.",
     },
+  });
+
+  await prisma.sourceDomain.create({
+    data: { sourceId: meetingSource.id, domain: "TECHNOLOGY_DIGITAL" },
   });
 
   const sponsorMeetingSource = await prisma.source.create({
     data: {
       accountId: account.id,
-      sourceType: "customer_meeting",
+      kind: "NOTE",
+      category: "MEETING",
+      visibility: "INTERNAL",
+      reliability: "HIGH",
       title: "Validation discussion with technical sponsor",
+      noteText:
+        "Sponsor confirmed the need, but funding is not available until next fiscal year.",
+      participants: "Jonas Berg, Erik Solberg",
       sourceDate: new Date("2026-11-25"),
       owner: "Jonas Berg",
-      classification: "external",
-      excerpt:
+      status: "ANALYSED",
+      summary:
         "Sponsor confirmed the need, but funding is not available until next fiscal year.",
     },
+  });
+
+  await prisma.sourceDomain.create({
+    data: { sourceId: sponsorMeetingSource.id, domain: "TECHNOLOGY_DIGITAL" },
+  });
+
+  // A press release found by the mocked "Run agent" monitor job — see the
+  // AgentRun and agent-suggested Insight/Gap further down.
+  const agentRun = await prisma.agentRun.create({
+    data: {
+      accountId: account.id,
+      job: "MONITOR",
+      startedAt: new Date("2026-11-25T08:00:00Z"),
+      finishedAt: new Date("2026-11-25T08:01:00Z"),
+      status: "COMPLETED",
+      sourcesCreated: 1,
+      insightsSuggested: 1,
+      gapsSuggested: 1,
+    },
+  });
+
+  const pressReleaseSource = await prisma.source.create({
+    data: {
+      accountId: account.id,
+      kind: "URL",
+      category: "PRESS_RELEASE",
+      visibility: "PUBLIC",
+      reliability: "HIGH",
+      title: "Nordic Horizon Group appoints new Chief Digital Officer",
+      url: "https://example.com/press/nordic-horizon-new-cdo",
+      sourceDate: new Date("2026-11-20"),
+      originType: "MATILDA_SUGGESTION",
+      monitor: true,
+      lastCheckedAt: new Date("2026-11-25"),
+      status: "ANALYSED",
+      summary:
+        "Nordic Horizon Group announced a new Chief Digital Officer, effective January 2027, with digital strategy and platform investments in scope.",
+      agentRunId: agentRun.id,
+    },
+  });
+
+  await prisma.sourceDomain.createMany({
+    data: [
+      { sourceId: pressReleaseSource.id, domain: "NEWS_CHANGES" },
+      { sourceId: pressReleaseSource.id, domain: "ORGANISATION_LEADERSHIP" },
+    ],
   });
 
   // --- Insights ---
@@ -97,7 +185,7 @@ async function main() {
       title: "Data fragmentation previously flagged as a problem",
       statement:
         "Fragmented customer and product data has previously been identified as slowing cross-business digital services.",
-      topic: "Data strategy",
+      domain: "TECHNOLOGY_DIGITAL",
       informationType: "FACT",
       status: "VALIDATED",
       importance: "MEDIUM",
@@ -115,7 +203,7 @@ async function main() {
       title: "Group ambition for integrated digital customer experiences",
       statement:
         "Nordic Horizon Group's 2026 strategy names more integrated digital customer experiences as a stated ambition.",
-      topic: "Strategy",
+      domain: "STRATEGY_PRIORITIES",
       informationType: "FACT",
       status: "VALIDATED",
       importance: "HIGH",
@@ -133,13 +221,40 @@ async function main() {
       title: "Possible shared Nordic data platform initiative",
       statement:
         "The customer appears to be considering a shared Nordic data platform to improve the sharing of customer and product data across business units. The initiative may be anchored in digital leadership, but scope and timing are not known.",
-      topic: "Data strategy",
+      domain: "TECHNOLOGY_DIGITAL",
       informationType: "OBSERVATION",
       status: "NEEDS_VALIDATION",
       importance: "HIGH",
       confidence: "MEDIUM",
       observedAt: new Date("2026-11-18"),
       createdBy: "Maya Olsen",
+    },
+  });
+
+  // Agent-suggested Insight (originType MATILDA_SUGGESTION) — produced by the
+  // mocked "Run agent" monitor job above, still awaiting human review.
+  const cdoInsight = await prisma.insight.create({
+    data: {
+      accountId: account.id,
+      title: "New Chief Digital Officer may become the group-level decision owner",
+      statement:
+        "Nordic Horizon Group has appointed a new Chief Digital Officer with digital strategy and platform investments in scope, starting January 2027.",
+      domain: "ORGANISATION_LEADERSHIP",
+      informationType: "AI_INFERENCE",
+      status: "NEEDS_VALIDATION",
+      importance: "HIGH",
+      confidence: "MEDIUM",
+      observedAt: new Date("2026-11-20"),
+      originType: "MATILDA_SUGGESTION",
+      aiGenerated: true,
+      suggestionKind: "NEW",
+      rationale:
+        "The press release's description of the CDO's scope ('digital strategy and platform investments') closely matches the unresolved decision-ownership Knowledge Gap.",
+      soWhat:
+        "Could answer the group-level decision-owner Knowledge Gap once confirmed with the customer.",
+      affectsAccountPlan: true,
+      agentRunId: agentRun.id,
+      createdBy: "agent",
     },
   });
 
@@ -154,6 +269,12 @@ async function main() {
       {
         insightId: ambitionInsight.id,
         sourceId: strategySource.id,
+        excerptId: strategyExcerpt.id,
+        supportType: "SUPPORTS",
+      },
+      {
+        insightId: cdoInsight.id,
+        sourceId: pressReleaseSource.id,
         supportType: "SUPPORTS",
       },
     ],
@@ -166,7 +287,9 @@ async function main() {
       {
         accountId: account.id,
         question: "Who owns the platform decision?",
-        topic: "Decision structure",
+        domain: "ORGANISATION_LEADERSHIP",
+        whyItMatters:
+          "Without a named decision owner, NOVA cannot target executive engagement effectively.",
         importance: "HIGH",
         status: "OPEN",
         relatedInsightId: platformObservation.id,
@@ -174,7 +297,9 @@ async function main() {
       {
         accountId: account.id,
         question: "Is funding available or planned for this initiative?",
-        topic: "Commercial",
+        domain: "STRATEGY_PRIORITIES",
+        whyItMatters:
+          "Determines whether to invest NOVA capacity now or wait for a committed budget.",
         importance: "CRITICAL",
         status: "OPEN",
         relatedInsightId: platformObservation.id,
@@ -182,10 +307,24 @@ async function main() {
       {
         accountId: account.id,
         question: "Which business units are involved?",
-        topic: "Scope",
+        domain: "COMPANY_BUSINESS",
+        whyItMatters: "Shapes the scope and stakeholder map for the Initiative.",
         importance: "MEDIUM",
         status: "OPEN",
         relatedInsightId: platformObservation.id,
+      },
+      {
+        accountId: account.id,
+        question:
+          "Will the new Chief Digital Officer take over group-level digital platform decisions?",
+        domain: "ORGANISATION_LEADERSHIP",
+        whyItMatters:
+          "Determines who to engage once an exploratory workshop is proposed.",
+        importance: "HIGH",
+        status: "OPEN",
+        originType: "MATILDA_SUGGESTION",
+        accepted: false,
+        relatedInsightId: cdoInsight.id,
       },
     ],
   });
@@ -552,6 +691,28 @@ async function main() {
           "Should NOVA invest capacity in developing a clear perspective and proposing an exploratory workshop before a formal Opportunity exists?",
       }),
     },
+  });
+
+  // --- Intelligence Brief (Customer Intelligence Overview) ---
+
+  const brief = await prisma.intelligenceBrief.create({
+    data: {
+      accountId: account.id,
+      text:
+        "Nordic Horizon Group has a stated ambition for more integrated digital customer experiences, " +
+        "and a possible shared Nordic data platform initiative is emerging from the Digital Platform team. " +
+        "The biggest uncertainty is who owns the decision at group level — a newly appointed Chief Digital " +
+        "Officer may be the answer, but this is not yet confirmed.",
+      generatedAt: new Date("2026-11-26"),
+    },
+  });
+
+  await prisma.intelligenceBriefInsight.createMany({
+    data: [
+      { briefId: brief.id, insightId: ambitionInsight.id },
+      { briefId: brief.id, insightId: platformObservation.id },
+      { briefId: brief.id, insightId: cdoInsight.id },
+    ],
   });
 
   console.log("Seed complete: Nordic Horizon Group scenario loaded.");

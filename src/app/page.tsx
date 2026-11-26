@@ -95,12 +95,20 @@ export default async function AccountOverviewPage() {
           <Badge>Account Manager: {account.accountManager}</Badge>
           {account.strategicStatus && <Badge>{account.strategicStatus}</Badge>}
         </div>
-        <Link
-          href="/account-plan"
-          className="mt-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
-        >
-          View Account Plan →
-        </Link>
+        <div className="mt-1 flex gap-4">
+          <Link
+            href="/account-plan"
+            className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            View Account Plan →
+          </Link>
+          <Link
+            href="/customer-intelligence"
+            className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            View Customer Intelligence →
+          </Link>
+        </div>
       </header>
 
       {reviewSummary?.decisionRequired && (

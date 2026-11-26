@@ -110,6 +110,12 @@ export default async function AccountPlanPage() {
             </span>
           )}
         </div>
+        <Link
+          href="/customer-intelligence"
+          className="mt-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+        >
+          View Customer Intelligence →
+        </Link>
       </header>
 
       {/* 1. Our Ambition — account-plan.md §4 */}

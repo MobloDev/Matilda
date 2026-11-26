@@ -28,6 +28,12 @@ cleanly by an existing entity — an Assumption is not an open question (`Knowle
 a Risk is not customer knowledge (`Insight`), and a Growth Area can exist, and be
 rejected, without ever becoming coordinated work (`Initiative`).
 
+The Customer Intelligence module (`customer-intelligence.md`) adds three further supporting
+entities — **Agent Run**, **Intelligence Brief**, and **Account Domain Override** — plus new
+fields and join tables on `Source`, `Insight`, and `Knowledge Gap`. These are supporting
+objects, not additional core entities, in the same sense `InsightSource` and
+`OpportunityQualification` already are.
+
 A physical schema may add junction tables, indexes, and technical metadata without changing this domain meaning.
 
 ## Modelling principles
@@ -215,6 +221,79 @@ for different follow-up, so one combined `resolved` value was not precise enough
 - `missing`
 - `not_applicable`
 
+### `intelligence_domain`
+
+Introduced for the Customer Intelligence module (`customer-intelligence.md`). Replaces the
+free-text `topic` field on `Insight` and `Knowledge Gap` with a fixed, filterable set — every
+Insight and Knowledge Gap belongs to exactly one domain.
+
+- `company_business`
+- `strategy_priorities`
+- `organisation_leadership`
+- `technology_digital`
+- `news_changes`
+- `nova_customer`
+
+### `source_kind`
+
+- `document`
+- `url`
+- `note`
+
+### `source_category`
+
+Grouped as external (`website`, `annual_report`, `press_release`, `news_article`,
+`investor_presentation`, `partner_case`, `job_posting`, `public_report`), internal NOVA
+(`sharepoint_document`, `teams_conversation`, `proposal`, `project_report`, `account_plan`,
+`crm_record`), and direct contact (`meeting`, `meeting_transcript`, `email`, `workshop`,
+`user_observation`).
+
+### `source_visibility`
+
+- `public`
+- `internal` — internal and direct-contact Sources; must never appear in customer-facing output.
+
+### `source_status`
+
+- `pending`
+- `analysing`
+- `analysed`
+- `monitored`
+- `failed`
+- `archived`
+
+### `suggestion_kind`
+
+Only set on agent-originated Insights or Knowledge Gaps.
+
+- `new`
+- `update`
+- `contradiction`
+
+### `agent_job`
+
+- `analyse_source`
+- `monitor`
+- `detect_change`
+- `suggest_gaps`
+- `write_brief`
+
+### `agent_run_status`
+
+- `running`
+- `completed`
+- `failed`
+
+### `domain_status`
+
+Computed, not normally stored (see "Domain status" under Insight below) — only a human
+`status_override` is persisted.
+
+- `strong`
+- `partial`
+- `limited`
+- `stale`
+
 ### `review_status`
 
 - `draft`
@@ -276,7 +355,7 @@ Represents one discrete claim or piece of knowledge about an Account.
 | `account_id` | UUID/FK | Yes | Parent Account |
 | `title` | string | Yes | Short scannable label |
 | `statement` | text | Yes | One atomic claim where practical |
-| `topic` | string/enum | Yes | Example: strategy, technology, decision structure |
+| `domain` | enum | Yes | One of six Intelligence Domains (`customer-intelligence.md` §4); replaces the earlier free-text `topic` |
 | `information_type` | enum | Yes | Fact, Observation, Hypothesis, or AI Inference |
 | `status` | enum | Yes | Insight status |
 | `importance` | enum | Yes | Strategic relevance |
@@ -288,7 +367,22 @@ Represents one discrete claim or piece of knowledge about an Account.
 | `last_reviewed_at` | datetime | No | Last freshness review |
 | `review_due_at` | datetime | No | Optional freshness threshold |
 | `supersedes_insight_id` | UUID/FK | No | Previous Insight if this replaces it |
+| `related_insight_id` | UUID/FK | No | For an `update`/`contradiction` suggestion: the Insight it refers to |
+| `suggestion_kind` | enum | No | Set only on agent-originated Insights |
+| `rationale` | text | No | Why the agent suggests it |
+| `so_what` | text | No | What this means for NOVA |
+| `affects_account_plan` | boolean | Yes | Default false; flags the Insight for attention even before a formal Goal/Initiative/Opportunity link exists |
+| `agent_run_id` | UUID/FK | No | The Agent Run that produced this Insight, if any |
 | common audit fields | — | Yes | As above |
+
+### Domain status
+
+Each Intelligence Domain has a status (`strong` / `partial` / `limited` / `stale`) shown on
+the Customer Intelligence Overview. It is **computed on read** from the Account's Insights and
+Knowledge Gaps in that domain (see `customer-intelligence.md` §4 for the exact heuristic), not
+stored — storing it would create a second value that could drift from the Insights it
+summarises. A human may record an explicit override (`AccountDomainOverride` below); the
+override, and only the override, is persisted.
 
 ### Rules
 
@@ -302,20 +396,53 @@ Represents one discrete claim or piece of knowledge about an Account.
 
 ## Source
 
-Represents evidence or origin for customer intelligence.
+Represents evidence or origin for customer intelligence. Extended for the Customer
+Intelligence module (`customer-intelligence.md` §5.3, §7) — `kind`/`category` replace the
+earlier free-text `source_type`/`classification`.
 
 | Field | Type | Required | Validation / meaning |
 |---|---|---:|---|
 | `id` | UUID | Yes | Primary key |
 | `account_id` | UUID/FK | Yes | Parent Account |
-| `source_type` | enum/string | Yes | Meeting, transcript, email, document, web, CRM, team Observation, other |
 | `title` | string | Yes | Human-readable Source title |
-| `reference` | string/URL | No | Link or external reference when available |
-| `source_date` | datetime/date | Yes | Date of the underlying Source |
+| `kind` | enum | Yes | Document, URL, or note |
+| `category` | enum | Yes | Defaults `visibility` and `reliability` (editable) |
+| `visibility` | enum | Yes | `internal` Sources must never appear in customer-facing output |
+| `reliability` | enum | Yes | Confidence-scale reuse: high/medium/low |
+| `url` | string | No | `kind = url` |
+| `file_name` / `file_type` | string | No | `kind = document`; metadata only — the prototype does not store or parse the actual file |
+| `note_text` | text | No | `kind = note` |
+| `participants` | string | No | Comma-separated, for notes/meetings |
+| `source_date` | datetime/date | No | Date of the underlying content |
 | `owner` | user/string | No | Source owner or contact |
-| `classification` | enum/string | No | Internal/external and access classification |
-| `excerpt` | text | No | Short relevant excerpt; do not duplicate entire documents unnecessarily |
+| `origin_type` | enum | Yes | Reuses the common `origin_type` enum |
+| `monitor` | boolean | Yes | Default false; URL watched for changes |
+| `last_checked_at` | datetime | No | Set when `monitor = true` |
+| `status` | enum | Yes | Source status |
+| `summary` | text | No | Short AI-written summary of the Source |
+| `agent_run_id` | UUID/FK | No | The Agent Run that added this Source, if any |
 | common audit fields | — | Yes | As above |
+
+### Rules
+
+- Sources are never edited after analysis, only re-analysed or archived. Archiving does not delete linked Insights but marks them "source archived".
+- Internal and direct-contact Sources must never be shown in customer-facing outputs.
+
+### Source–Domain link
+
+A Source may touch more than one Intelligence Domain; use a many-to-many link table
+`source_domains`: `source_id` + `domain`.
+
+### Source Excerpt
+
+A short quote or extracted passage backing a specific Insight.
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| `id` | UUID | Yes | Primary key |
+| `source_id` | UUID/FK | Yes | Parent Source |
+| `text` | text | Yes | The quoted or extracted passage |
+| `location` | string | No | e.g. "p. 12", "slide 4" |
 
 ### Insight–Source link
 
@@ -325,6 +452,7 @@ Use a many-to-many link table such as `insight_sources`:
 |---|---|---:|---|
 | `insight_id` | UUID/FK | Yes | Same Account as Source |
 | `source_id` | UUID/FK | Yes | Same Account as Insight |
+| `excerpt_id` | UUID/FK | No | The specific excerpt this link is based on, if any |
 | `support_type` | enum | Yes | `supports`, `challenges`, `context` |
 | `note` | text | No | Why the Source is relevant |
 
@@ -339,9 +467,12 @@ Represents strategically important information the team does not know.
 | `id` | UUID | Yes | Primary key |
 | `account_id` | UUID/FK | Yes | Parent Account |
 | `question` | text | Yes | Formulated as an answerable question |
-| `topic` | string/enum | Yes | Knowledge domain |
+| `domain` | enum | Yes | One of six Intelligence Domains; replaces the earlier free-text `topic` |
+| `why_it_matters` | text | No | Why resolving this Gap matters |
 | `importance` | enum | Yes | Priority of resolving the gap |
 | `status` | enum | Yes | Open, investigating, answered, closed unanswerable |
+| `origin_type` | enum | Yes | Reuses the common `origin_type` enum |
+| `accepted` | boolean | Yes | Default true; false while an agent-suggested Gap awaits human acceptance |
 | `owner` | user reference | No | Required once investigating |
 | `target_date` | date | No | Optional resolution target |
 | `resolution` | text | No | Required when answered or closed unanswerable |
@@ -644,6 +775,54 @@ Initiative. Backs the Account Plan's Growth and White-Space Map (`account-plan.m
 - A Growth Area with posture `reject` or `monitor` normally has no `initiative_id`.
 - Setting `posture` to `pursue` should normally be followed by creating or linking an Initiative.
 - A Growth Area is a human-owned assessment; MATILDA may propose one but a human sets the posture.
+
+## Agent Run
+
+Records one execution of the (mocked, for the prototype) Customer Intelligence agent —
+`customer-intelligence.md` §6. Lets the review queue and "what changed" group suggestions by
+run, and keeps the agent's actions honestly inspectable rather than silent.
+
+| Field | Type | Required | Validation / meaning |
+|---|---|---:|---|
+| `id` | UUID | Yes | Primary key |
+| `account_id` | UUID/FK | Yes | Parent Account |
+| `job` | enum | Yes | Agent job |
+| `started_at` | datetime | Yes | |
+| `finished_at` | datetime | No | Set when `status != running` |
+| `status` | enum | Yes | Agent run status |
+| `sources_created` | integer | Yes | Default 0 |
+| `insights_suggested` | integer | Yes | Default 0 |
+| `gaps_suggested` | integer | Yes | Default 0 |
+
+## Intelligence Brief
+
+The short AI-generated summary shown on the Customer Intelligence Overview
+(`customer-intelligence.md` §5.1). Regenerable; the prototype's "agent" fills it from a
+template over the current Insights, never a live model call.
+
+| Field | Type | Required | Validation / meaning |
+|---|---|---:|---|
+| `id` | UUID | Yes | Primary key |
+| `account_id` | UUID/FK | Yes | Parent Account |
+| `text` | text | Yes | 3–5 sentences |
+| `generated_at` | datetime | Yes | |
+
+### Intelligence Brief–Insight link
+
+Many-to-many link table `intelligence_brief_insights` (`brief_id` + `insight_id`) — which
+Insights the brief's sentences are built on.
+
+## Account Domain Override
+
+A human's explicit override of a domain's computed status (`customer-intelligence.md` §4),
+shown with a reason wherever the computed status would otherwise appear.
+
+| Field | Type | Required | Validation / meaning |
+|---|---|---:|---|
+| `account_id` | UUID/FK | Yes | Parent Account |
+| `domain` | enum | Yes | Unique together with `account_id` |
+| `status_override` | enum | Yes | Domain status |
+| `status_override_reason` | text | Yes | Required — an override without a reason is not allowed |
 
 ## Material change history
 
