@@ -13,6 +13,12 @@ const prisma = new PrismaClient();
 async function main() {
   // Delete in child-to-parent order so foreign keys never point at a
   // row that no longer exists.
+  await prisma.knowledgeGapGoal.deleteMany();
+  await prisma.knowledgeGapInitiative.deleteMany();
+  await prisma.knowledgeGapRelationship.deleteMany();
+  await prisma.knowledgeGapOpportunity.deleteMany();
+  await prisma.knowledgeGapReview.deleteMany();
+  await prisma.knowledgeGapAction.deleteMany();
   await prisma.action.deleteMany();
   await prisma.opportunityQualification.deleteMany();
   await prisma.opportunityInsight.deleteMany();
@@ -282,51 +288,64 @@ async function main() {
 
   // --- Knowledge Gaps ---
 
-  await prisma.knowledgeGap.createMany({
-    data: [
-      {
-        accountId: account.id,
-        question: "Who owns the platform decision?",
-        domain: "ORGANISATION_LEADERSHIP",
-        whyItMatters:
-          "Without a named decision owner, NOVA cannot target executive engagement effectively.",
-        importance: "HIGH",
-        status: "OPEN",
-        relatedInsightId: platformObservation.id,
-      },
-      {
-        accountId: account.id,
-        question: "Is funding available or planned for this initiative?",
-        domain: "STRATEGY_PRIORITIES",
-        whyItMatters:
-          "Determines whether to invest NOVA capacity now or wait for a committed budget.",
-        importance: "CRITICAL",
-        status: "OPEN",
-        relatedInsightId: platformObservation.id,
-      },
-      {
-        accountId: account.id,
-        question: "Which business units are involved?",
-        domain: "COMPANY_BUSINESS",
-        whyItMatters: "Shapes the scope and stakeholder map for the Initiative.",
-        importance: "MEDIUM",
-        status: "OPEN",
-        relatedInsightId: platformObservation.id,
-      },
-      {
-        accountId: account.id,
-        question:
-          "Will the new Chief Digital Officer take over group-level digital platform decisions?",
-        domain: "ORGANISATION_LEADERSHIP",
-        whyItMatters:
-          "Determines who to engage once an exploratory workshop is proposed.",
-        importance: "HIGH",
-        status: "OPEN",
-        originType: "MATILDA_SUGGESTION",
-        accepted: false,
-        relatedInsightId: cdoInsight.id,
-      },
-    ],
+  // Created individually (not createMany) so we can link each to Goals,
+  // Initiatives, Relationships, Opportunities, Reviews, and Actions further
+  // down, once those exist (data-model.md "Knowledge Gap" §Links).
+  const decisionOwnerGap = await prisma.knowledgeGap.create({
+    data: {
+      accountId: account.id,
+      question: "Who owns the platform decision?",
+      domain: "ORGANISATION_LEADERSHIP",
+      whyItMatters:
+        "Without a named decision owner, NOVA cannot target executive engagement effectively.",
+      importance: "HIGH",
+      status: "OPEN",
+      creationType: "HUMAN_MANUAL",
+      relatedInsightId: platformObservation.id,
+    },
+  });
+
+  const fundingGap = await prisma.knowledgeGap.create({
+    data: {
+      accountId: account.id,
+      question: "Is funding available or planned for this initiative?",
+      domain: "STRATEGY_PRIORITIES",
+      whyItMatters:
+        "Determines whether to invest NOVA capacity now or wait for a committed budget.",
+      importance: "CRITICAL",
+      status: "OPEN",
+      creationType: "HUMAN_CONTEXTUAL",
+      relatedInsightId: platformObservation.id,
+    },
+  });
+
+  const scopeGap = await prisma.knowledgeGap.create({
+    data: {
+      accountId: account.id,
+      question: "Which business units are involved?",
+      domain: "COMPANY_BUSINESS",
+      whyItMatters: "Shapes the scope and stakeholder map for the Initiative.",
+      importance: "MEDIUM",
+      status: "OPEN",
+      creationType: "HUMAN_MANUAL",
+      relatedInsightId: platformObservation.id,
+    },
+  });
+
+  const cdoDecisionGap = await prisma.knowledgeGap.create({
+    data: {
+      accountId: account.id,
+      question:
+        "Will the new Chief Digital Officer take over group-level digital platform decisions?",
+      domain: "ORGANISATION_LEADERSHIP",
+      whyItMatters:
+        "Determines who to engage once an exploratory workshop is proposed.",
+      importance: "HIGH",
+      status: "OPEN",
+      creationType: "MATILDA_SUGGESTED",
+      accepted: false,
+      relatedInsightId: cdoInsight.id,
+    },
   });
 
   // --- Relationships ---
@@ -550,16 +569,6 @@ async function main() {
       {
         accountId: account.id,
         initiativeId: initiative.id,
-        title: "Identify the initiative owner and decision structure",
-        owner: "Astrid Lindqvist",
-        dueDate: new Date("2026-12-10"),
-        priority: "HIGH",
-        status: "IN_PROGRESS",
-        originType: "HUMAN",
-      },
-      {
-        accountId: account.id,
-        initiativeId: initiative.id,
         title: "Assemble relevant NOVA capabilities and references",
         owner: "Maya Olsen",
         dueDate: new Date("2026-12-15"),
@@ -568,6 +577,22 @@ async function main() {
         originType: "MATILDA_SUGGESTION",
       },
     ],
+  });
+
+  // Created individually (not in the createMany above) so we can link it to
+  // the decisionOwnerGap via KnowledgeGapAction below — this Action is
+  // literally how NOVA intends to find the answer.
+  const identifyOwnerAction = await prisma.action.create({
+    data: {
+      accountId: account.id,
+      initiativeId: initiative.id,
+      title: "Identify the initiative owner and decision structure",
+      owner: "Astrid Lindqvist",
+      dueDate: new Date("2026-12-10"),
+      priority: "HIGH",
+      status: "IN_PROGRESS",
+      originType: "HUMAN",
+    },
   });
 
   // --- Opportunity + qualification ---
@@ -669,7 +694,7 @@ async function main() {
 
   // --- Account Review ---
 
-  await prisma.accountReview.create({
+  const accountReview = await prisma.accountReview.create({
     data: {
       accountId: account.id,
       reviewDate: new Date("2026-11-26"),
@@ -691,6 +716,41 @@ async function main() {
           "Should NOVA invest capacity in developing a clear perspective and proposing an exploratory workshop before a formal Opportunity exists?",
       }),
     },
+  });
+
+  // --- Knowledge Gap links (data-model.md "Knowledge Gap" §Links) ---
+  // Created now that the Goal, Initiative, Relationships, Opportunity,
+  // Action, and Review they relate to all exist.
+
+  await prisma.knowledgeGapInitiative.createMany({
+    data: [
+      { knowledgeGapId: decisionOwnerGap.id, initiativeId: initiative.id },
+      { knowledgeGapId: scopeGap.id, initiativeId: initiative.id },
+      { knowledgeGapId: cdoDecisionGap.id, initiativeId: initiative.id },
+    ],
+  });
+
+  await prisma.knowledgeGapGoal.create({
+    data: { knowledgeGapId: fundingGap.id, goalId: goal.id },
+  });
+
+  await prisma.knowledgeGapRelationship.createMany({
+    data: [
+      { knowledgeGapId: decisionOwnerGap.id, relationshipId: cdoRelationship.id },
+      { knowledgeGapId: cdoDecisionGap.id, relationshipId: cdoRelationship.id },
+    ],
+  });
+
+  await prisma.knowledgeGapOpportunity.create({
+    data: { knowledgeGapId: fundingGap.id, opportunityId: opportunity.id },
+  });
+
+  await prisma.knowledgeGapAction.create({
+    data: { knowledgeGapId: decisionOwnerGap.id, actionId: identifyOwnerAction.id },
+  });
+
+  await prisma.knowledgeGapReview.create({
+    data: { knowledgeGapId: decisionOwnerGap.id, reviewId: accountReview.id },
   });
 
   // --- Intelligence Brief (Customer Intelligence Overview) ---

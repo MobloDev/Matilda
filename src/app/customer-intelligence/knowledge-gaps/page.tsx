@@ -16,11 +16,27 @@ const IMPORTANCE_RANK: Record<string, number> = {
   LOW: 3,
 };
 
+const CREATION_TYPE_LABEL: Record<string, string> = {
+  HUMAN_MANUAL: "Added manually",
+  HUMAN_CONTEXTUAL: "Added in context",
+  MATILDA_SUGGESTED: "Suggested by MATILDA",
+  ACCOUNT_REVIEW: "From an Account Review",
+};
+
 export default async function CustomerIntelligenceKnowledgeGapsPage() {
   const account = await prisma.account.findFirst({
     include: {
       knowledgeGaps: {
-        include: { relatedInsight: true, answeredByInsight: true },
+        include: {
+          relatedInsight: true,
+          answeredByInsight: true,
+          goalLinks: { include: { goal: true } },
+          initiativeLinks: { include: { initiative: true } },
+          relationshipLinks: { include: { relationship: true } },
+          opportunityLinks: { include: { opportunity: true } },
+          reviewLinks: { include: { review: true } },
+          actionLinks: { include: { action: true } },
+        },
       },
     },
   });
@@ -57,38 +73,58 @@ export default async function CustomerIntelligenceKnowledgeGapsPage() {
 
       <Section title={`${gaps.length} Knowledge Gaps`}>
         <ul className="flex flex-col gap-3">
-          {gaps.map((gap) => (
-            <li
-              key={gap.id}
-              className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge>{DOMAIN_LABEL[gap.domain]}</Badge>
-                <Badge>{gap.importance}</Badge>
-                <Badge>{STATUS_LABEL[gap.status]}</Badge>
-                {gap.originType === "MATILDA_SUGGESTION" && !gap.accepted && (
-                  <Badge>Suggested by MATILDA — awaiting acceptance</Badge>
-                )}
-                {!gap.owner &&
-                  (gap.importance === "HIGH" || gap.importance === "CRITICAL") && (
-                    <Badge>⚠ No owner</Badge>
+          {gaps.map((gap) => {
+            const relatedTo = [
+              ...gap.goalLinks.map((l) => `Goal: ${l.goal.title}`),
+              ...gap.initiativeLinks.map((l) => `Initiative: ${l.initiative.title}`),
+              ...gap.relationshipLinks.map(
+                (l) => `Relationship: ${l.relationship.contactName}`,
+              ),
+              ...gap.opportunityLinks.map((l) => `Opportunity: ${l.opportunity.title}`),
+              ...gap.reviewLinks.map(
+                (l) => `Review: ${l.review.reviewDate.toLocaleDateString()}`,
+              ),
+              ...gap.actionLinks.map((l) => `Action: ${l.action.title}`),
+            ];
+            return (
+              <li
+                key={gap.id}
+                className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge>{DOMAIN_LABEL[gap.domain]}</Badge>
+                  <Badge>{gap.importance}</Badge>
+                  <Badge>{STATUS_LABEL[gap.status]}</Badge>
+                  <Badge>{CREATION_TYPE_LABEL[gap.creationType]}</Badge>
+                  {gap.creationType === "MATILDA_SUGGESTED" && !gap.accepted && (
+                    <Badge>Awaiting acceptance</Badge>
                   )}
-              </div>
-              <p className="mt-2 font-medium">{gap.question}</p>
-              {gap.whyItMatters && (
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  {gap.whyItMatters}
+                  {!gap.owner &&
+                    (gap.importance === "HIGH" || gap.importance === "CRITICAL") && (
+                      <Badge>⚠ No owner</Badge>
+                    )}
+                </div>
+                <p className="mt-2 font-medium">{gap.question}</p>
+                {gap.whyItMatters && (
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                    {gap.whyItMatters}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-zinc-500">
+                  {gap.owner ? `Owner: ${gap.owner}` : "No owner assigned"}
+                  {gap.targetDate && ` · Due ${gap.targetDate.toLocaleDateString()}`}
+                  {gap.relatedInsight && ` · About: ${gap.relatedInsight.title}`}
+                  {gap.answeredByInsight &&
+                    ` · Answered by: ${gap.answeredByInsight.title}`}
                 </p>
-              )}
-              <p className="mt-2 text-xs text-zinc-500">
-                {gap.owner ? `Owner: ${gap.owner}` : "No owner assigned"}
-                {gap.targetDate && ` · Due ${gap.targetDate.toLocaleDateString()}`}
-                {gap.relatedInsight && ` · About: ${gap.relatedInsight.title}`}
-                {gap.answeredByInsight &&
-                  ` · Answered by: ${gap.answeredByInsight.title}`}
-              </p>
-            </li>
-          ))}
+                {relatedTo.length > 0 && (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Related to: {relatedTo.join(", ")}
+                  </p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </Section>
     </div>

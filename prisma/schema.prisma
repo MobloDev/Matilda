@@ -162,6 +162,16 @@ enum IntelligenceDomain {
   TECHNOLOGY_DIGITAL
   NEWS_CHANGES
   NOVA_CUSTOMER
+  PARTNERS_COMPETITION
+}
+
+// More detailed than OriginType — only used on KnowledgeGap. See
+// docs/data-model.md "gap_creation_type".
+enum GapCreationType {
+  HUMAN_MANUAL
+  HUMAN_CONTEXTUAL
+  MATILDA_SUGGESTED
+  ACCOUNT_REVIEW
 }
 
 enum SourceKind {
@@ -397,7 +407,7 @@ model KnowledgeGap {
   whyItMatters String?
   importance   ImportanceLevel
   status       KnowledgeGapStatus @default(OPEN)
-  originType   OriginType         @default(HUMAN)
+  creationType GapCreationType    @default(HUMAN_MANUAL)
   accepted     Boolean            @default(true)
   owner        String?
   targetDate   DateTime?
@@ -416,6 +426,70 @@ model KnowledgeGap {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  goalLinks         KnowledgeGapGoal[]
+  initiativeLinks   KnowledgeGapInitiative[]
+  relationshipLinks KnowledgeGapRelationship[]
+  opportunityLinks  KnowledgeGapOpportunity[]
+  reviewLinks       KnowledgeGapReview[]
+  actionLinks       KnowledgeGapAction[]
+}
+
+// Generic many-to-many links from a Knowledge Gap to the other plan elements it
+// relates to (data-model.md "Knowledge Gap" §Links) — distinct from
+// relatedInsightId/answeredByInsightId, which carry a specific meaning each.
+model KnowledgeGapGoal {
+  knowledgeGapId String
+  knowledgeGap   KnowledgeGap @relation(fields: [knowledgeGapId], references: [id])
+  goalId         String
+  goal           Goal         @relation(fields: [goalId], references: [id])
+
+  @@id([knowledgeGapId, goalId])
+}
+
+model KnowledgeGapInitiative {
+  knowledgeGapId String
+  knowledgeGap   KnowledgeGap @relation(fields: [knowledgeGapId], references: [id])
+  initiativeId   String
+  initiative     Initiative   @relation(fields: [initiativeId], references: [id])
+
+  @@id([knowledgeGapId, initiativeId])
+}
+
+model KnowledgeGapRelationship {
+  knowledgeGapId String
+  knowledgeGap   KnowledgeGap @relation(fields: [knowledgeGapId], references: [id])
+  relationshipId String
+  relationship   Relationship @relation(fields: [relationshipId], references: [id])
+
+  @@id([knowledgeGapId, relationshipId])
+}
+
+model KnowledgeGapOpportunity {
+  knowledgeGapId String
+  knowledgeGap   KnowledgeGap @relation(fields: [knowledgeGapId], references: [id])
+  opportunityId  String
+  opportunity    Opportunity  @relation(fields: [opportunityId], references: [id])
+
+  @@id([knowledgeGapId, opportunityId])
+}
+
+model KnowledgeGapReview {
+  knowledgeGapId String
+  knowledgeGap   KnowledgeGap  @relation(fields: [knowledgeGapId], references: [id])
+  reviewId       String
+  review         AccountReview @relation(fields: [reviewId], references: [id])
+
+  @@id([knowledgeGapId, reviewId])
+}
+
+model KnowledgeGapAction {
+  knowledgeGapId String
+  knowledgeGap   KnowledgeGap @relation(fields: [knowledgeGapId], references: [id])
+  actionId       String
+  action         Action       @relation(fields: [actionId], references: [id])
+
+  @@id([knowledgeGapId, actionId])
 }
 
 model Relationship {
@@ -434,9 +508,10 @@ model Relationship {
   lastInteractionAt     DateTime?
   notes                 String?
 
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
   initiativeLinks InitiativeRelationship[]
+  gapLinks        KnowledgeGapRelationship[]
 }
 
 model Goal {
@@ -455,12 +530,13 @@ model Goal {
   status             GoalStatus      @default(PROPOSED)
   progressAssessment String?
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
   initiatives  Initiative[]
   insightLinks GoalInsight[]
   assumptions  Assumption[]
   risks        Risk[]
+  gapLinks     KnowledgeGapGoal[]
 }
 
 // Many-to-many: which Insights informed/support/challenge a Goal.
@@ -498,6 +574,7 @@ model Initiative {
   assumptions       Assumption[]
   risks             Risk[]
   growthAreas       GrowthArea[]
+  gapLinks          KnowledgeGapInitiative[]
 }
 
 model InitiativeInsight {
@@ -602,6 +679,8 @@ model Action {
   originType OriginType @default(HUMAN)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+
+  gapLinks KnowledgeGapAction[]
 }
 
 model Opportunity {
@@ -633,6 +712,7 @@ model Opportunity {
   actions        Action[]
   qualifications OpportunityQualification[]
   insightLinks   OpportunityInsight[]
+  gapLinks       KnowledgeGapOpportunity[]
 }
 
 // One row per qualification dimension per Opportunity (data-model.md section 19).
@@ -673,9 +753,10 @@ model AccountReview {
   finalisedBy       String?
   finalisedAt       DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
   actions   Action[]
+  gapLinks  KnowledgeGapReview[]
 }
 
 // Records one execution of the (mocked, for the prototype) Customer Intelligence

@@ -93,7 +93,10 @@ A **Review queue** (agent suggestions awaiting decision) is shown as a panel on 
 
 ## 4. Intelligence domains (V1)
 
-V1 uses **six domains**. Every Insight and Knowledge Gap belongs to exactly one domain.
+V1 uses **seven domains**. Every Insight and Knowledge Gap belongs to exactly one domain.
+`partners_competition` was added when `knowledge-gaps.md` named it as a needed category —
+see `data-model.md` "intelligence_domain" for why it was added here rather than kept as a
+separate classification.
 
 | Key | Domain | Typical content | Agent can collect automatically | Human contribution |
 |---|---|---|---|---|
@@ -103,6 +106,7 @@ V1 uses **six domains**. Every Insight and Knowledge Gap belongs to exactly one 
 | `technology_digital` | Technology & Digital Agenda | Technology partners, platform choices, cloud, data, AI programmes, commerce, CX, security, modernisation, announced investments | Fairly high | Validation |
 | `news_changes` | News & Key Changes | Press releases, leadership changes, results, partnerships, contracts, reorganisations, regulatory and market events | Very high | Low |
 | `nova_customer` | NOVA & Customer | What NOVA delivers today, project history, proposals, satisfaction signals, internal knowledge | From internal sources | Important |
+| `partners_competition` | Partners & Competition | Technology/delivery partners, competitive position, incumbent vendors, alliances | Fairly high | Important |
 
 ### Domain status
 
@@ -320,7 +324,8 @@ type IntelligenceDomain =
   | 'organisation_leadership'
   | 'technology_digital'
   | 'news_changes'
-  | 'nova_customer';
+  | 'nova_customer'
+  | 'partners_competition';
 
 type InsightType = 'fact' | 'observation' | 'hypothesis' | 'ai_inference';
 // Shared with the rest of MATILDA — see data-model.md "insight_status". Not stored:
@@ -438,9 +443,17 @@ interface KnowledgeGap {
   ownerId?: string;            // required when importance = 'high'
   dueDate?: string;
   status: GapStatus;
-  origin: Origin;              // agent-suggested gaps start as status 'open' with origin 'agent' and need acceptance
+  // More detailed than Origin — see data-model.md "gap_creation_type". Agent-suggested
+  // gaps start as status 'open' with creationType 'matilda_suggested' and need acceptance.
+  creationType: 'human_manual' | 'human_contextual' | 'matilda_suggested' | 'account_review';
   accepted: boolean;           // false = agent suggestion not yet accepted
   answeredByInsightId?: string;
+  goalIds: string[];
+  initiativeIds: string[];
+  relationshipIds: string[];
+  opportunityIds: string[];
+  reviewIds: string[];
+  actionIds: string[];
   createdAt: string;
   createdBy: string;
 }
@@ -575,7 +588,7 @@ Account: **Nordic Horizon Group** (the same fictional canonical Account used thr
 
 **Seed:**
 - 8 Sources: Group 2026 digital ambition statement (PDF — the same Source already seeded for Account Plan), Annual report (URL, monitored), Investor presentation (URL), Platform strategy deck (PPTX), Customer meeting 22 Nov (note), NOVA proposal notes (internal), Press release on the data platform direction, Job posting "Head of Data Platform".
-- ~25 Insights across all six domains, mixed types; 3 in `needs_validation`.
+- ~25 Insights across all seven domains, mixed types; 3 in `needs_validation`.
 - 6 Knowledge Gaps, 2 high importance (one without owner, to trigger the warning) — may reuse the three already seeded for Account Plan (decision owner, funding, scope).
 - 2 PlanReferences to Account Plan (the existing Goal and Initiative).
 

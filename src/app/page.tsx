@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge, Section } from "@/components/ui";
+import { DOMAINS, DOMAIN_LABEL } from "@/lib/customer-intelligence";
 
 // Importance/priority enums are stored as plain strings in SQLite, so
 // Prisma can't sort them "LOW < MEDIUM < HIGH < CRITICAL" on its own —
@@ -59,6 +60,14 @@ export default async function AccountOverviewPage() {
   const knowledgeGaps = [...account.knowledgeGaps].sort(
     (a, b) => importanceRank[a.importance] - importanceRank[b.importance],
   );
+
+  // Lighter, gap-focused counterpart to the full Domain Status table on the
+  // Customer Intelligence Overview (docs/knowledge-gaps.md §12) — just where
+  // the open gaps are, not a second copy of domain understanding/freshness.
+  const gapCountsByDomain = DOMAINS.map((domain) => ({
+    domain,
+    count: account.knowledgeGaps.filter((g) => g.domain === domain).length,
+  })).filter((row) => row.count > 0);
 
   const allActions = account.goals.flatMap((goal) =>
     goal.initiatives.flatMap((initiative) => initiative.actions),
@@ -148,6 +157,15 @@ export default async function AccountOverviewPage() {
       </Section>
 
       <Section title="Important Knowledge Gaps">
+        {gapCountsByDomain.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {gapCountsByDomain.map((row) => (
+              <Badge key={row.domain}>
+                {DOMAIN_LABEL[row.domain]}: {row.count} open
+              </Badge>
+            ))}
+          </div>
+        )}
         <ul className="flex flex-col gap-2">
           {knowledgeGaps.map((gap) => (
             <li

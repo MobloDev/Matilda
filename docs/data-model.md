@@ -225,7 +225,11 @@ for different follow-up, so one combined `resolved` value was not precise enough
 
 Introduced for the Customer Intelligence module (`customer-intelligence.md`). Replaces the
 free-text `topic` field on `Insight` and `Knowledge Gap` with a fixed, filterable set — every
-Insight and Knowledge Gap belongs to exactly one domain.
+Insight and Knowledge Gap belongs to exactly one domain. `partners_competition` was added
+when `knowledge-gaps.md` proposed its own, separate four-value `area` for Knowledge Gaps
+(`organization_governance`, `technology_digital`, `partners_competition`, `nova_position`) —
+rather than maintain two competing classifications of the same kind of thing, Knowledge Gaps
+use this one set too, extended with the one genuinely new category it named.
 
 - `company_business`
 - `strategy_priorities`
@@ -233,6 +237,7 @@ Insight and Knowledge Gap belongs to exactly one domain.
 - `technology_digital`
 - `news_changes`
 - `nova_customer`
+- `partners_competition`
 
 ### `source_kind`
 
@@ -467,11 +472,11 @@ Represents strategically important information the team does not know.
 | `id` | UUID | Yes | Primary key |
 | `account_id` | UUID/FK | Yes | Parent Account |
 | `question` | text | Yes | Formulated as an answerable question |
-| `domain` | enum | Yes | One of six Intelligence Domains; replaces the earlier free-text `topic` |
+| `domain` | enum | Yes | One of the seven Intelligence Domains; replaces the earlier free-text `topic` |
 | `why_it_matters` | text | No | Why resolving this Gap matters |
 | `importance` | enum | Yes | Priority of resolving the gap |
 | `status` | enum | Yes | Open, investigating, answered, closed unanswerable |
-| `origin_type` | enum | Yes | Reuses the common `origin_type` enum |
+| `creation_type` | enum | Yes | Gap creation type — see below |
 | `accepted` | boolean | Yes | Default true; false while an agent-suggested Gap awaits human acceptance |
 | `owner` | user reference | No | Required once investigating |
 | `target_date` | date | No | Optional resolution target |
@@ -481,15 +486,33 @@ Represents strategically important information the team does not know.
 | `resolved_by` | user reference | No | Human validator |
 | common audit fields | — | Yes | As above |
 
+### `gap_creation_type`
+
+More detailed than the common `origin_type` enum, so a gap created directly by a human can be
+told apart from one surfaced through an Account Review — see `knowledge-gaps.md` §3/§6.
+
+- `human_manual` — created directly in Customer Intelligence.
+- `human_contextual` — created from another screen (Account Overview, Account Plan,
+  Relationship, Opportunity), context captured automatically.
+- `matilda_suggested` — agent-proposed; pairs with `accepted = false` until a human accepts it.
+- `account_review` — surfaced during an Account Review.
+
 ### Links
 
-A Knowledge Gap may link to one or more Insights, Relationships, Initiatives, or Opportunities through implementation-level link tables.
+A Knowledge Gap may link to any number of Goals, Initiatives, Relationships, Opportunities,
+Account Reviews, and Actions through many-to-many link tables (`knowledge_gap_goals`,
+`knowledge_gap_initiatives`, `knowledge_gap_relationships`, `knowledge_gap_opportunities`,
+`knowledge_gap_reviews`, `knowledge_gap_actions`), each just `knowledge_gap_id` + the other
+entity's id. `related_insight_id` and `answered_by_insight_id` stay as their own fields above
+since they carry a specific meaning ("about this Insight" / "answered by this Insight"), not a
+generic many-to-many relation.
 
 ### Rules
 
 - `answered` requires `resolution`, `resolved_at`, `resolved_by`, and `answered_by_insight_id`.
 - `closed_unanswerable` requires `resolution`, `resolved_at`, and `resolved_by`, but no `answered_by_insight_id`.
 - Answering should create or link to the Insight that produced the reusable Account knowledge.
+- An Action linked to a Gap does not automatically resolve it — the Action may fail to produce a reliable answer.
 - Do not delete important closed Gaps; they provide learning history.
 
 ## Relationship

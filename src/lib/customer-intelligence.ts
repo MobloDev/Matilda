@@ -14,6 +14,7 @@ export const DOMAIN_LABEL = {
   TECHNOLOGY_DIGITAL: "Technology & Digital Agenda",
   NEWS_CHANGES: "News & Key Changes",
   NOVA_CUSTOMER: "NOVA & Customer",
+  PARTNERS_COMPETITION: "Partners & Competition",
 } as const;
 
 export type IntelligenceDomainKey = keyof typeof DOMAIN_LABEL;
